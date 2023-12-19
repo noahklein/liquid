@@ -86,11 +86,6 @@ draw_gui :: proc() {
             ngui.vec2(&player.vel, label = "Velocity")
             ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
         }
-
-        if ngui.flex_row({0.5, 0.5}) {
-            ngui.float(&player.SPEED, min = 0, max = 2000, step = 0.5, label = "Speed")
-            ngui.float(&player.FRICTION, min = 0, max = 1, step = 0.01, label = "Friction")
-        }
     }
 
     rl.DrawFPS(rl.GetScreenWidth() - 80, 0)
