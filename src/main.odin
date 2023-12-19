@@ -4,9 +4,10 @@ import "core:fmt"
 import "core:mem"
 import rl "vendor:raylib"
 
+import "player"
 import "ngui"
 
-timescale : f32
+timescale : f32 = 1.0
 camera: rl.Camera2D
 
 main :: proc() {
@@ -39,19 +40,24 @@ main :: proc() {
 
     camera = rl.Camera2D{ zoom = 1, offset = screen_size() / 2 }
 
-    ngui.init()
-    defer ngui.deinit()
+    when ODIN_DEBUG {
+        ngui.init()
+        defer ngui.deinit()
+    }
 
     rl.SetTargetFPS(120)
     for !rl.WindowShouldClose() {
         defer free_all(context.temp_allocator)
+
+        dt := rl.GetFrameTime() * timescale
+        player.update(dt)
 
         rl.BeginDrawing()
         defer rl.EndDrawing()
         rl.ClearBackground(rl.PURPLE)
 
         rl.BeginMode2D(camera)
-        rl.DrawCircleV({0, 0}, 40, rl.WHITE)
+            player.draw2D()
         rl.EndMode2D()
 
         when ODIN_DEBUG {
@@ -69,6 +75,21 @@ draw_gui :: proc() {
             ngui.vec2(&camera.target, label = "Target")
             ngui.float(&camera.zoom, min = 0.1, max = 10, label = "Zoom")
             ngui.float(&camera.rotation, min = -360, max = 360, label = "Angle")
+        }
+        if ngui.flex_row({1}) {
+            ngui.float(&timescale, 0, 10, label = "Timescale")
+        }
+
+        if ngui.flex_row({0.2, 0.3, 0.3, 0.2}) {
+            ngui.text("Player")
+            ngui.vec2(&player.pos, label = "Position")
+            ngui.vec2(&player.vel, label = "Velocity")
+            ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
+        }
+
+        if ngui.flex_row({0.5, 0.5}) {
+            ngui.float(&player.SPEED, min = 0, max = 2000, step = 0.5, label = "Speed")
+            ngui.float(&player.FRICTION, min = 0, max = 1, step = 0.01, label = "Friction")
         }
     }
 
