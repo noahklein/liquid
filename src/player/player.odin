@@ -1,13 +1,15 @@
 package player
 
 import rl "vendor:raylib"
+import "core:math/linalg"
 
 BLOCK_SIZE  :: 16
 SIZE        :: rl.Vector2{2 * BLOCK_SIZE, 3 * BLOCK_SIZE}
 TANK_SIZE   :: SIZE
 
-SPEED: f32 = 100
-FRICTION: f32 = 0.98
+SPEED:     f32 =  8 * BLOCK_SIZE
+MAX_SPEED: f32 = 10 * BLOCK_SIZE
+FRICTION:  f32 = 0.95
 
 pos, vel: rl.Vector2
 fullness: f32
@@ -29,14 +31,20 @@ get_input :: proc() -> bit_set[Action] {
 update :: proc(dt: f32) {
     input := get_input()
     if .Left  in input {
+        if vel.x > 0 do vel.x *= 0.6 // We're sliding the wrong way, slow down.
+
         vel.x -= SPEED * dt
         facing_left = true
     } else if .Right in input {
+        if vel.x < 0 do vel.x *= 0.6 // We're sliding the wrong way, slow down.
+
         vel.x += SPEED * dt
         facing_left = false
+    } else {
+        vel *= FRICTION // Only apply friction when not moving.
     }
 
-    vel *= FRICTION
+    vel = linalg.clamp(vel, -MAX_SPEED, MAX_SPEED)
     pos += vel * dt
 }
 
