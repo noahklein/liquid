@@ -67,10 +67,10 @@ main :: proc() {
             cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
             hover, ok := grid.hovered_cell(cursor)
             if ok {
-
                 rl.BeginMode2D(camera)
-                grid.draw(camera)
-                rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
+                    gui_drag(cursor)
+                    rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
+                    grid.draw(camera)
                 rl.EndMode2D()
             }
 

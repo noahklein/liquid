@@ -3,17 +3,18 @@ package grid
 import rl "vendor:raylib"
 
 CELL_SIZE :: 16
+COLOR :: rl.Color{255, 255, 255, 200}
 
 draw :: proc(camera: rl.Camera2D) {
     start := snap_down(camera.target - camera.offset)
     end   := snap_up  (camera.target + camera.offset)
 
     for x := start.x; x <= end.x; x += CELL_SIZE {
-        rl.DrawLineV({x, start.y}, {x, end.y}, rl.WHITE)
+        rl.DrawLineV({x, start.y}, {x, end.y}, COLOR)
     }
 
     for y := start.y; y <= end.y; y += CELL_SIZE {
-        rl.DrawLineV({start.x, y}, {end.x, y}, rl.WHITE)
+        rl.DrawLineV({start.x, y}, {end.x, y}, COLOR)
     }
 }
 

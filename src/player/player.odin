@@ -31,7 +31,7 @@ get_input :: proc() -> bit_set[Action] {
 
 @(require_results)
 get_rect :: #force_inline proc() -> rl.Rectangle {
-    return {pos.x, pos.y + SIZE.y, SIZE.x, SIZE.y}
+    return {pos.x, pos.y, SIZE.x, SIZE.y}
 }
 
 update :: proc(dt: f32) {
