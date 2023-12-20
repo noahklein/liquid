@@ -6,6 +6,7 @@ import rl "vendor:raylib"
 
 import "player"
 import "ngui"
+import "world/grid"
 
 timescale : f32 = 1.0
 camera: rl.Camera2D
@@ -52,6 +53,8 @@ main :: proc() {
         dt := rl.GetFrameTime() * timescale
         player.update(dt)
 
+        camera.target += (player.pos - camera.target) * dt
+
         rl.BeginDrawing()
         defer rl.EndDrawing()
         rl.ClearBackground(rl.PURPLE)
@@ -61,6 +64,16 @@ main :: proc() {
         rl.EndMode2D()
 
         when ODIN_DEBUG {
+            cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+            hover, ok := grid.hovered_cell(cursor)
+            if ok {
+
+                rl.BeginMode2D(camera)
+                grid.draw(camera)
+                rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
+                rl.EndMode2D()
+            }
+
             draw_gui()
         }
     }

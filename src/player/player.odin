@@ -2,12 +2,13 @@ package player
 
 import rl "vendor:raylib"
 import "core:math/linalg"
+import "../world"
+import "../world/grid"
 
-BLOCK_SIZE  :: f32(16)
-SIZE        :: rl.Vector2{2 * BLOCK_SIZE, 3 * BLOCK_SIZE}
+SIZE        :: rl.Vector2{2 * grid.CELL_SIZE, 3 * grid.CELL_SIZE}
 
-SPEED     :: 8 * BLOCK_SIZE
-MAX_SPEED :: 10 * BLOCK_SIZE
+SPEED     :: 8 * grid.CELL_SIZE
+MAX_SPEED :: 10 * grid.CELL_SIZE
 FRICTION  :: 0.95
 TURN_FRICTION :: 0.75
 
@@ -17,9 +18,7 @@ fullness: f32
 facing: FacingDirection
 FacingDirection :: enum u8 { Left, Right, Turning }
 
-Action :: enum u8 {
-    Left, Right,
-}
+Action :: enum u8 { Left, Right }
 
 get_input :: proc() -> bit_set[Action] {
     input: bit_set[Action]
@@ -30,11 +29,19 @@ get_input :: proc() -> bit_set[Action] {
     return input
 }
 
+@(require_results)
+get_rect :: #force_inline proc() -> rl.Rectangle {
+    return {pos.x, pos.y + SIZE.y, SIZE.x, SIZE.y}
+}
+
 update :: proc(dt: f32) {
+    if world.check_collision(get_rect()) {
+        return
+    }
+
     input := get_input()
     if .Left  in input {
         facing = .Left
-
         if vel.x > 0 {
             // We're sliding the wrong way, slow down.
             vel.x *= TURN_FRICTION
@@ -61,8 +68,8 @@ update :: proc(dt: f32) {
 
 draw2D :: proc() {
     // Player
-    rect := rl.Rectangle{pos.x, pos.y, SIZE.x, SIZE.y}
-    rl.DrawRectangleRec(rect, rl.WHITE)
+    rect := get_rect()
+    rl.DrawRectangleRec(rect, rl.BEIGE)
 
     // Tank
     if facing != .Turning {
