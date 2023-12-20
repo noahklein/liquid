@@ -1,13 +1,9 @@
 package main
 
 import rl "vendor:raylib"
+import "world"
 import "world/grid"
 
-
-Drag :: struct {
-    dragging: bool,
-    mouse_start: rl.Vector2,
-}
 Gui :: struct {
     dragging: bool,
     drag_mouse_start: rl.Vector2,
@@ -23,23 +19,21 @@ gui_drag :: proc(cursor: rl.Vector2) {
     }
     if !gui.dragging do return
 
-    if gui.dragging {
-        d_mouse := gui.drag_mouse_start
-        is_up_or_left := cursor.x < d_mouse.x || cursor.y < d_mouse.y
-        start_x := grid.snap_up(i32(d_mouse.x)) if cursor.x < d_mouse.x else grid.snap_down(i32(d_mouse.x))
-        start_y := grid.snap_up(i32(d_mouse.y)) if cursor.y < d_mouse.y else grid.snap_down(i32(d_mouse.y))
-        start := rl.Vector2{f32(start_x), f32(start_y)}
+    d_mouse := gui.drag_mouse_start
+    start_x := grid.snap_up(i32(d_mouse.x)) if cursor.x < d_mouse.x else grid.snap_down(i32(d_mouse.x))
+    start_y := grid.snap_up(i32(d_mouse.y)) if cursor.y < d_mouse.y else grid.snap_down(i32(d_mouse.y))
+    start := rl.Vector2{f32(start_x), f32(start_y)}
 
-        end_x := grid.snap_up(i32(cursor.x)) if cursor.x > d_mouse.x else grid.snap_down(i32(cursor.x))
-        end_y := grid.snap_up(i32(cursor.y)) if cursor.y > d_mouse.y else grid.snap_down(i32(cursor.y))
-        end := rl.Vector2{f32(end_x), f32(end_y)}
+    end_x := grid.snap_up(i32(cursor.x)) if cursor.x > d_mouse.x else grid.snap_down(i32(cursor.x))
+    end_y := grid.snap_up(i32(cursor.y)) if cursor.y > d_mouse.y else grid.snap_down(i32(cursor.y))
+    end := rl.Vector2{f32(end_x), f32(end_y)}
 
-        rl.DrawRectangleRec(normalize_rect(start, end), rl.GREEN)
-    }
-
+    drag_rect := normalize_rect(start, end)
+    rl.DrawRectangleRec(drag_rect, rl.GREEN - {0, 0, 0, 100})
 
     if rl.IsMouseButtonReleased(.LEFT) {
         gui.dragging = false
+        append(&world.walls, world.Wall{ drag_rect })
     }
 }
 

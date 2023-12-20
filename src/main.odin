@@ -6,6 +6,7 @@ import rl "vendor:raylib"
 
 import "player"
 import "ngui"
+import "world"
 import "world/grid"
 
 timescale : f32 = 1.0
@@ -40,6 +41,8 @@ main :: proc() {
     defer rl.CloseWindow()
 
     camera = rl.Camera2D{ zoom = 1, offset = screen_size() / 2 }
+    world.init()
+    defer world.deinit()
 
     when ODIN_DEBUG {
         ngui.init()
@@ -61,6 +64,7 @@ main :: proc() {
 
         rl.BeginMode2D(camera)
             player.draw2D()
+            world.draw2D()
         rl.EndMode2D()
 
         when ODIN_DEBUG {
