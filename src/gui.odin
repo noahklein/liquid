@@ -17,7 +17,13 @@ gui_drag :: proc(cursor: rl.Vector2) {
         gui.drag_mouse_start = cursor
         return
     }
+
     if !gui.dragging do return
+
+    if rl.IsMouseButtonPressed(.RIGHT) {
+        gui.dragging = false
+        return
+    }
 
     d_mouse := gui.drag_mouse_start
     start_x := grid.snap_up(i32(d_mouse.x)) if cursor.x < d_mouse.x else grid.snap_down(i32(d_mouse.x))
