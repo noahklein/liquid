@@ -20,17 +20,20 @@ gui_drag :: proc(cursor: rl.Vector2) {
     }
 
     if !gui.dragging do return
+    // Here be draggin'
 
     if rl.IsMouseButtonPressed(.RIGHT) {
         gui.dragging = false
         return
     }
 
+    // The grid square the mouse hovered when dragging started. Pick the corner based on drag direction.
     d_mouse := gui.drag_mouse_start
     start_x := grid.snap_up(i32(d_mouse.x)) if cursor.x < d_mouse.x else grid.snap_down(i32(d_mouse.x))
     start_y := grid.snap_up(i32(d_mouse.y)) if cursor.y < d_mouse.y else grid.snap_down(i32(d_mouse.y))
     start := rl.Vector2{f32(start_x), f32(start_y)}
 
+    // The grid square the mouse is currently hovering. Again, the corner is based on drag direction.
     end_x := grid.snap_up(i32(cursor.x)) if cursor.x > d_mouse.x else grid.snap_down(i32(cursor.x))
     end_y := grid.snap_up(i32(cursor.y)) if cursor.y > d_mouse.y else grid.snap_down(i32(cursor.y))
     end := rl.Vector2{f32(end_x), f32(end_y)}

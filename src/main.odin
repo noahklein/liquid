@@ -68,22 +68,21 @@ main :: proc() {
         rl.EndMode2D()
 
         when ODIN_DEBUG {
-            cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-            hover, ok := grid.hovered_cell(cursor)
-            if ok {
-                rl.BeginMode2D(camera)
-                    gui_drag(cursor)
-                    rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
-                    grid.draw(camera)
-                rl.EndMode2D()
-            }
-
             draw_gui()
         }
     }
 }
 
 draw_gui :: proc() {
+    cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+    if hover, ok := grid.hovered_cell(cursor); ok {
+        rl.BeginMode2D(camera)
+            gui_drag(cursor)
+            rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
+            grid.draw(camera)
+        rl.EndMode2D()
+    }
+
     ngui.update()
 
     if ngui.begin_panel("hello", {0, 0, 300, 0}) {
