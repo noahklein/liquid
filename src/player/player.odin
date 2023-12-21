@@ -2,6 +2,8 @@ package player
 
 import "core:fmt"
 import "core:math/linalg"
+import "core:slice"
+
 import rl "vendor:raylib"
 
 import "../world"
@@ -14,9 +16,11 @@ MAX_SPEED :: 10 * grid.CELL_SIZE
 FRICTION  :: 0.95
 TURN_FRICTION :: 0.75
 GRAVITY :: 8 * grid.CELL_SIZE
+FIXED_DT :: 1.0 / 120.0
 
 pos, vel: rl.Vector2
 fullness: f32
+dt_acc: f32
 
 is_colliding: bool
 
@@ -40,7 +44,14 @@ get_rect :: #force_inline proc() -> rl.Rectangle {
 }
 
 update :: proc(dt: f32) {
+    dt_acc += dt
+    for dt_acc >= FIXED_DT {
+        dt_acc -= FIXED_DT
+        fixed_update(FIXED_DT)
+    }
+}
 
+fixed_update :: proc(dt: f32) {
     input := get_input()
     if .Left  in input {
         facing = .Left
@@ -93,10 +104,39 @@ draw2D :: proc() {
     rl.DrawRectangleRec(rect, rl.BLACK)
 }
 
+broad_hits : [dynamic]BroadHit
+
+BroadHit :: struct {
+    time: f32,
+    wall_index: int,
+}
+
 check_collision :: proc(dt: f32)  {
     player_rect := get_rect()
-    for wall in world.walls {
+
+    // Broad-phase, get a list of all collision objects.
+    clear(&broad_hits)
+    for wall, i in world.walls {
         contact := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt) or_continue
-        vel += contact.normal * linalg.abs(vel)
+        append(&broad_hits, BroadHit{
+            time = contact.time,
+            wall_index = i,
+        })
+    }
+
+    if len(broad_hits) == 0 {
+        return
+    }
+
+    // Sort the colliding rects by collision time: nearest first.
+    slice.sort_by_key(broad_hits[:], proc(bh: BroadHit) -> f32 {
+        return bh.time
+    })
+
+    // Narrow-phase: check sorted collisions and resolve them in order.
+    for hit in broad_hits {
+        wall := world.walls[hit.wall_index]
+        contact := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt) or_continue
+        vel += contact.normal * linalg.abs(vel) * (1 - contact.time)
     }
 }

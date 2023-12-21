@@ -43,7 +43,7 @@ gui_drag :: proc(cursor: rl.Vector2) {
 
     if rl.IsMouseButtonReleased(.LEFT) {
         gui.dragging = false
-        append(&world.walls, world.Wall{ drag_rect })
+        append(&world.walls, world.Wall{ drag_rect, world.rand_color() })
     }
 }
 

@@ -1,20 +1,33 @@
 package world
 
 import "core:fmt"
+import "core:math"
 import rl "vendor:raylib"
+import "grid"
+import "core:math/rand"
 
 walls: [dynamic]Wall
 
 init :: proc() {
-    reserve(&walls, 128)
+    // reserve(&walls, 128)
+    reserve(&walls, 1024)
 
+    for x in 0..<1024 {
+        WIDTH :: 3 * grid.CELL_SIZE
+        append(&walls, Wall{
+            rec = {f32(x) * WIDTH, 10 * grid.CELL_SIZE, WIDTH, grid.CELL_SIZE * 5},
+            color = rand_color(),
+        })
+    }
 }
+
 deinit :: proc() {
     delete(walls)
 }
 
 Wall :: struct{
     rec: rl.Rectangle,
+    color: rl.Color,
 }
 
 check_collision :: proc(rec: rl.Rectangle) -> bool {
@@ -27,7 +40,7 @@ check_collision :: proc(rec: rl.Rectangle) -> bool {
 
 draw2D :: proc() {
     for wall in walls {
-        rl.DrawRectangleRec(wall.rec, rl.LIME)
+        rl.DrawRectangleRec(wall.rec, wall.color)
     }
 }
 
@@ -42,6 +55,9 @@ ray_vs_rect :: proc(origin, dir: rl.Vector2, rect: rl.Rectangle) -> (Contact, bo
 
     near := (rpos - origin) / dir
     far  := (rpos + rsize - origin) / dir
+
+    if math.is_nan(near.x) || math.is_nan(near.y) do return {}, false
+    if math.is_nan(far.x)  || math.is_nan(far.y)  do return {}, false
 
     if near.x > far.x do near.x, far.x = far.x, near.x
     if near.y > far.y do near.y, far.y = far.y, near.y
@@ -84,4 +100,13 @@ dyn_rect_vs_rect :: proc(dyn, static: rl.Rectangle, vel: rl.Vector2, dt: f32) ->
     }
 
     return contact, true
+}
+
+rand_color :: proc() -> rl.Color {
+    return {
+        u8(rand.int_max(256)),
+        u8(rand.int_max(256)),
+        u8(rand.int_max(256)),
+        255,
+    }
 }

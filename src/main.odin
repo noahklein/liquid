@@ -44,6 +44,8 @@ main :: proc() {
     world.init()
     defer world.deinit()
 
+    defer delete(player.broad_hits)
+
     when ODIN_DEBUG {
         ngui.init()
         defer ngui.deinit()
