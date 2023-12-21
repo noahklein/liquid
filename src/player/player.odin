@@ -65,6 +65,12 @@ update :: proc(dt: f32) {
     }
 
     vel = linalg.clamp(vel, -MAX_SPEED, MAX_SPEED)
+
+    EPSILON :: 1e-7
+    if vel != 0 && abs(vel.x) < EPSILON && abs(vel.y) < EPSILON {
+        vel = 0
+    }
+
     pos += vel * dt
 }
 
@@ -91,7 +97,6 @@ check_collision :: proc(dt: f32) -> bool {
         // contact, ok := world.ray_vs_rect(pos, vel, wall.rec)
         ok := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt)
         if ok {
-            // fmt.println(contact)
             return true
         }
     }

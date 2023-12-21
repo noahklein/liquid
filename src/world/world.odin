@@ -69,11 +69,6 @@ ray_vs_rect :: proc(origin, dir: rl.Vector2, rect: rl.Rectangle) -> (Contact, bo
 }
 
 dyn_rect_vs_rect :: proc(dyn, static: rl.Rectangle, vel: rl.Vector2, dt: f32) -> bool {
-    if vel == 0 {
-        fmt.println("zero!", rl.GetTime())
-        return false
-    }
-
     expanded_target := rl.Rectangle{
         static.x - dyn.width  / 2,
         static.y - dyn.height / 2,
