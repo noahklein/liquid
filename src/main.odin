@@ -1,7 +1,9 @@
 package main
 
 import "core:fmt"
+import "core:math/linalg"
 import "core:mem"
+
 import rl "vendor:raylib"
 
 import "player"
@@ -58,7 +60,9 @@ main :: proc() {
         dt := rl.GetFrameTime() * timescale
         player.update(dt)
 
-        camera.target += (player.pos - camera.target) * dt
+        if linalg.distance(camera.target, player.pos) > 3 * grid.CELL_SIZE {
+            camera.target += (player.pos - camera.target) * rl.GetFrameTime() // Unaffected by timescale
+        }
 
         rl.BeginDrawing()
         defer rl.EndDrawing()
