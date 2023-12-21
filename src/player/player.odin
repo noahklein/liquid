@@ -1,7 +1,9 @@
 package player
 
-import rl "vendor:raylib"
+import "core:fmt"
 import "core:math/linalg"
+import rl "vendor:raylib"
+
 import "../world"
 import "../world/grid"
 
@@ -14,6 +16,8 @@ TURN_FRICTION :: 0.75
 
 pos, vel: rl.Vector2
 fullness: f32
+
+is_colliding: bool
 
 facing: FacingDirection
 FacingDirection :: enum u8 { Left, Right, Turning }
@@ -35,9 +39,7 @@ get_rect :: #force_inline proc() -> rl.Rectangle {
 }
 
 update :: proc(dt: f32) {
-    if world.check_collision(get_rect()) {
-        return
-    }
+    is_colliding = check_collision(dt)
 
     input := get_input()
     if .Left  in input {
@@ -69,7 +71,7 @@ update :: proc(dt: f32) {
 draw2D :: proc() {
     // Player
     rect := get_rect()
-    rl.DrawRectangleRec(rect, rl.BEIGE)
+    rl.DrawRectangleRec(rect, rl.BEIGE if !is_colliding else rl.RED)
 
     // Tank
     if facing != .Turning {
@@ -81,4 +83,18 @@ draw2D :: proc() {
     // Liquid
     rect.height = (1 - fullness) * SIZE.y
     rl.DrawRectangleRec(rect, rl.BLACK)
+}
+
+check_collision :: proc(dt: f32) -> bool {
+    player_rect := get_rect()
+    for wall in world.walls {
+        // contact, ok := world.ray_vs_rect(pos, vel, wall.rec)
+        ok := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt)
+        if ok {
+            // fmt.println(contact)
+            return true
+        }
+    }
+
+    return false
 }
