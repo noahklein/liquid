@@ -12,7 +12,7 @@ init :: proc() {
     // reserve(&walls, 128)
     reserve(&walls, 1024)
 
-    for x in 0..<1024 {
+    for x in 0..<cap(walls) {
         WIDTH :: 3 * grid.CELL_SIZE
         append(&walls, Wall{
             rec = {f32(x) * WIDTH, 10 * grid.CELL_SIZE, WIDTH, grid.CELL_SIZE * 5},

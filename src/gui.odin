@@ -51,6 +51,13 @@ gui_drag :: proc(cursor: rl.Vector2) {
 gui_draw :: proc() {
     cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
     if hover, ok := grid.hovered_cell(cursor); ok {
+        // Delete walls on right click.
+        if rl.IsMouseButtonPressed(.RIGHT) do for wall, i in world.walls {
+            if rl.CheckCollisionPointRec(cursor, wall.rec) {
+                unordered_remove(&world.walls, i)
+            }
+        }
+
         rl.BeginMode2D(camera)
             gui_drag(cursor)
             rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
