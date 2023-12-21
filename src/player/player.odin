@@ -13,6 +13,7 @@ SPEED     :: 8 * grid.CELL_SIZE
 MAX_SPEED :: 10 * grid.CELL_SIZE
 FRICTION  :: 0.95
 TURN_FRICTION :: 0.75
+GRAVITY :: 8 * grid.CELL_SIZE
 
 pos, vel: rl.Vector2
 fullness: f32
@@ -39,7 +40,6 @@ get_rect :: #force_inline proc() -> rl.Rectangle {
 }
 
 update :: proc(dt: f32) {
-    is_colliding = check_collision(dt)
 
     input := get_input()
     if .Left  in input {
@@ -61,9 +61,10 @@ update :: proc(dt: f32) {
 
         vel.x += SPEED * dt
     } else {
-        vel *= FRICTION // Only apply friction when not moving.
+        vel.x *= FRICTION // Only apply friction when not moving.
     }
 
+    vel.y += GRAVITY * dt
     vel = linalg.clamp(vel, -MAX_SPEED, MAX_SPEED)
 
     EPSILON :: 1e-7
@@ -71,6 +72,7 @@ update :: proc(dt: f32) {
         vel = 0
     }
 
+    check_collision(dt)
     pos += vel * dt
 }
 
@@ -91,15 +93,10 @@ draw2D :: proc() {
     rl.DrawRectangleRec(rect, rl.BLACK)
 }
 
-check_collision :: proc(dt: f32) -> bool {
+check_collision :: proc(dt: f32)  {
     player_rect := get_rect()
     for wall in world.walls {
-        // contact, ok := world.ray_vs_rect(pos, vel, wall.rec)
-        ok := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt)
-        if ok {
-            return true
-        }
+        contact := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt) or_continue
+        vel += contact.normal * linalg.abs(vel)
     }
-
-    return false
 }

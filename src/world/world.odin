@@ -68,7 +68,8 @@ ray_vs_rect :: proc(origin, dir: rl.Vector2, rect: rl.Rectangle) -> (Contact, bo
     }, true
 }
 
-dyn_rect_vs_rect :: proc(dyn, static: rl.Rectangle, vel: rl.Vector2, dt: f32) -> bool {
+dyn_rect_vs_rect :: proc(dyn, static: rl.Rectangle, vel: rl.Vector2, dt: f32) -> (contact: Contact, ok: bool) {
+    // Add dynamic's area as padding to the static rect, so we can detect collision before penetration.
     expanded_target := rl.Rectangle{
         static.x - dyn.width  / 2,
         static.y - dyn.height / 2,
@@ -76,13 +77,11 @@ dyn_rect_vs_rect :: proc(dyn, static: rl.Rectangle, vel: rl.Vector2, dt: f32) ->
         static.height + dyn.height,
     }
 
-    origin := rl.RecPos(dyn) + rl.RecSize(dyn) / 2
-    contact, ok := ray_vs_rect(origin, vel * dt, expanded_target)
-    if ok {
-        if contact.time < 1 {
-            return true
-        }
+    origin := rl.RecPos(dyn) + rl.RecSize(dyn) / 2 // Cast ray from center of dynamic rect.
+    contact = ray_vs_rect(origin, vel * dt, expanded_target) or_return
+    if contact.time > 1 {
+        return {}, false
     }
 
-    return false
+    return contact, true
 }
