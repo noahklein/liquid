@@ -74,43 +74,9 @@ main :: proc() {
         rl.EndMode2D()
 
         when ODIN_DEBUG {
-            draw_gui()
+            gui_draw()
         }
     }
-}
-
-draw_gui :: proc() {
-    cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-    if hover, ok := grid.hovered_cell(cursor); ok {
-        rl.BeginMode2D(camera)
-            gui_drag(cursor)
-            rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
-            grid.draw(camera)
-        rl.EndMode2D()
-    }
-
-    ngui.update()
-
-    if ngui.begin_panel("Game", {0, 0, 500, 0}) {
-        if ngui.flex_row({0.2, 0.4, 0.2, 0.2}) {
-            ngui.text("Camera")
-            ngui.vec2(&camera.target, label = "Target")
-            ngui.float(&camera.zoom, min = 0.1, max = 10, label = "Zoom")
-            ngui.float(&camera.rotation, min = -360, max = 360, label = "Angle")
-        }
-        if ngui.flex_row({1}) {
-            ngui.float(&timescale, 0, 10, label = "Timescale")
-        }
-
-        if ngui.flex_row({0.2, 0.3, 0.3, 0.2}) {
-            ngui.text("Player")
-            ngui.vec2(&player.pos, label = "Position")
-            ngui.vec2(&player.vel, label = "Velocity")
-            ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
-        }
-    }
-
-    rl.DrawFPS(rl.GetScreenWidth() - 80, 0)
 }
 
 screen_size :: #force_inline proc() -> rl.Vector2 {
