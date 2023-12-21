@@ -24,6 +24,7 @@ NGui :: struct {
 
     panels: map[cstring]Panel,
     panel: cstring, // Active panel
+    hovered_panel: cstring,
     panel_row, panel_column: int,
     column_widths: []f32,
 }
@@ -44,6 +45,7 @@ deinit :: proc() {
 update :: proc() {
     screen := rl.Vector2{f32(rl.GetScreenWidth()), f32(rl.GetScreenHeight())}
     state.mouse = linalg.clamp(rl.GetMousePosition(), 0, screen)
+    state.hovered_panel = nil
 
     if state.dragging != nil && rl.IsMouseButtonUp(.LEFT) {
         state.dragging = nil
@@ -270,4 +272,9 @@ padding :: #force_inline proc(rect: rl.Rectangle, pad: rl.Vector2) -> rl.Rectang
 @(require_results)
 want_keyboard :: #force_inline proc() -> bool {
     return state.active_input != nil
+}
+
+@(require_results)
+want_mouse :: #force_inline proc() -> bool {
+    return state.hovered_panel != nil
 }

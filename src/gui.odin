@@ -3,6 +3,7 @@ package main
 import rl "vendor:raylib"
 import "world"
 import "world/grid"
+import "ngui"
 
 Gui :: struct {
     dragging: bool,
@@ -12,7 +13,7 @@ Gui :: struct {
 gui : Gui
 
 gui_drag :: proc(cursor: rl.Vector2) {
-    if rl.IsMouseButtonPressed(.LEFT) {
+    if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
         gui.dragging = true
         gui.drag_mouse_start = cursor
         return

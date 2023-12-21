@@ -20,6 +20,9 @@ begin_panel :: proc(title: cstring, rect: rl.Rectangle) -> bool {
     panel := &state.panels[title]
     rect := state.panels[title].rect
 
+    if rl.CheckCollisionPointRec(state.mouse, rect) {
+        state.hovered_panel = title // Storing this for reporting to rest of application in want_mouse().
+    }
 
     // Title bar.
     title_rect := rect
