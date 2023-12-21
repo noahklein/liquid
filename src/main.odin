@@ -87,7 +87,7 @@ draw_gui :: proc() {
 
     ngui.update()
 
-    if ngui.begin_panel("hello", {0, 0, 300, 0}) {
+    if ngui.begin_panel("Game", {0, 0, 500, 0}) {
         if ngui.flex_row({0.2, 0.4, 0.2, 0.2}) {
             ngui.text("Camera")
             ngui.vec2(&camera.target, label = "Target")
