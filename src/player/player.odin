@@ -3,6 +3,7 @@ package player
 import "core:fmt"
 import "core:math/linalg"
 import "core:slice"
+import "core:math/rand"
 
 import rl "vendor:raylib"
 
@@ -97,8 +98,27 @@ fixed_update :: proc(dt: f32) {
 
     player_rect := get_rect()
     check_collision(dt, player_rect)
-    // check_collision(dt, get_tank_rect(player_rect))
     pos += vel * dt
+
+    {
+        tank_rect := get_tank_rect(player_rect)
+        // Check liquid tank collision.
+        for &particle, i in world.liquid {
+            if rl.CheckCollisionCircleRec(particle.center, world.LIQUID_RADIUS, tank_rect) {
+                if fullness >= 1 {
+                    fullness = 1
+                    particle.vel.y *= -0.5
+                    particle.vel.x += (rand.float32() - 0.5) * 4 * grid.CELL_SIZE * dt
+                    continue
+                }
+
+                // @HACK: last element will be skipped because of swap.
+                unordered_remove(&world.liquid, i)
+                fullness += 0.1
+            }
+        }
+    }
+
 }
 
 draw2D :: proc() {

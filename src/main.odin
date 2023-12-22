@@ -46,6 +46,11 @@ main :: proc() {
     world.init()
     defer world.deinit()
 
+    // Spawn liquid emitter for testing.
+    append(&world.liquid_emitters, world.LiquidEmitter{
+        pos = {10 * grid.CELL_SIZE, -8 * grid.CELL_SIZE},
+    })
+
     defer delete(player.broad_hits)
 
     when ODIN_DEBUG {
@@ -58,6 +63,7 @@ main :: proc() {
         defer free_all(context.temp_allocator)
 
         dt := rl.GetFrameTime() * timescale
+        world.liquid_update(dt)
         player.update(dt)
 
         if linalg.distance(camera.target, player.pos) > 3 * grid.CELL_SIZE {
