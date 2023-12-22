@@ -8,6 +8,7 @@ import rl "vendor:raylib"
 
 import "../world"
 import "../world/grid"
+import "../ngui"
 
 SIZE        :: rl.Vector2{2 * grid.CELL_SIZE, 3 * grid.CELL_SIZE}
 
@@ -30,17 +31,28 @@ FacingDirection :: enum u8 { Left, Right, Turning }
 Action :: enum u8 { Left, Right }
 
 get_input :: proc() -> bit_set[Action] {
-    input: bit_set[Action]
+    if ngui.want_keyboard() do return {} // User is typing in GUI
 
+    input: bit_set[Action]
     if      rl.IsKeyDown(.A) || rl.IsKeyDown(.LEFT)  do input += {.Left}
     else if rl.IsKeyDown(.D) || rl.IsKeyDown(.RIGHT) do input += {.Right}
-
     return input
 }
 
 @(require_results)
 get_rect :: #force_inline proc() -> rl.Rectangle {
     return {pos.x, pos.y, SIZE.x, SIZE.y}
+}
+
+@(require_results)
+get_tank_rect :: #force_inline proc(player_rect: rl.Rectangle) -> rl.Rectangle {
+    tank := player_rect
+    if facing != .Turning {
+        tank.x += SIZE.x if facing == .Left else -SIZE.x
+    }
+    tank.y -= SIZE.y / 2
+
+    return tank
 }
 
 update :: proc(dt: f32) {
@@ -83,7 +95,9 @@ fixed_update :: proc(dt: f32) {
         vel = 0
     }
 
-    check_collision(dt)
+    player_rect := get_rect()
+    check_collision(dt, player_rect)
+    // check_collision(dt, get_tank_rect(player_rect))
     pos += vel * dt
 }
 
@@ -93,10 +107,7 @@ draw2D :: proc() {
     rl.DrawRectangleRec(rect, rl.BEIGE if !is_colliding else rl.RED)
 
     // Tank
-    if facing != .Turning {
-        rect.x += SIZE.x if facing == .Left else -SIZE.x
-    }
-    rect.y -= SIZE.y / 2
+    rect = get_tank_rect(rect)
     rl.DrawRectangleRec(rect, rl.BLUE)
 
     // Liquid
@@ -111,13 +122,12 @@ BroadHit :: struct {
     wall_index: int,
 }
 
-check_collision :: proc(dt: f32)  {
-    player_rect := get_rect()
-
+// Player collision detection and resolution. Called for player and tank.
+check_collision :: proc(dt: f32, rect: rl.Rectangle) {
     // Broad-phase, get a list of all collision objects.
     clear(&broad_hits)
     for wall, i in world.walls {
-        contact := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt) or_continue
+        contact := world.dyn_rect_vs_rect(rect, wall.rec, vel, dt) or_continue
         append(&broad_hits, BroadHit{
             time = contact.time,
             wall_index = i,
@@ -136,7 +146,7 @@ check_collision :: proc(dt: f32)  {
     // Narrow-phase: check sorted collisions and resolve them in order.
     for hit in broad_hits {
         wall := world.walls[hit.wall_index]
-        contact := world.dyn_rect_vs_rect(player_rect, wall.rec, vel, dt) or_continue
+        contact := world.dyn_rect_vs_rect(rect, wall.rec, vel, dt) or_continue
         vel += contact.normal * linalg.abs(vel) * (1 - contact.time)
     }
 }

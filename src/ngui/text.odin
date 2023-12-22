@@ -110,10 +110,11 @@ input_rect :: proc(rect: rl.Rectangle, text: ^string, label: cstring) {
     // Cursor
     if active {
         CURSOR_HEIGHT :: FONT + 1
+        CURSOR_WIDTH := f32(rl.MeasureText("a", FONT))
         cursor_rect := rl.Rectangle{
             text_box.x + f32(rl.MeasureText(cstr, FONT) + 2),
             text_box.y + text_box.height / 2 - CURSOR_HEIGHT / 2,
-            INPUT_CURSOR_WIDTH,
+            CURSOR_WIDTH,
             CURSOR_HEIGHT,
         }
         rl.DrawRectangleRec(cursor_rect, cursor_color())
