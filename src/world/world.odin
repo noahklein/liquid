@@ -6,12 +6,13 @@ import "core:math/linalg"
 import rl "vendor:raylib"
 import "grid"
 import "core:math/rand"
+import "../ngui"
 
 LIQUID_COLOR  :: rl.BLUE
-LIQUID_RADIUS :: grid.CELL_SIZE / 4
-LIQUID_GRAVITY  :: grid.CELL_SIZE / 2
+LIQUID_RADIUS :: grid.CELL_SIZE / 8
+LIQUID_GRAVITY  :: 5 * grid.CELL_SIZE
 MAX_PARTICLE_SPEED :: 10 * grid.CELL_SIZE
-EMITTER_FIRE_SECONDS :: 0.1
+EMITTER_FIRE_SECONDS :: 0.2
 
 walls: [dynamic]Wall
 liquid: [dynamic]LiquidParticle
@@ -61,15 +62,29 @@ liquid_update :: proc(dt: f32) {
         }
     }
 
-    for &particle, i in liquid {
+    outer: for &particle, i in liquid {
         particle.vel.y += LIQUID_GRAVITY * dt // @TODO: clamp velocity
         particle.vel = linalg.clamp(particle.vel, -MAX_PARTICLE_SPEED, MAX_PARTICLE_SPEED)
-        particle.center += particle.vel
+        particle.center += particle.vel * dt
 
-        for wall in walls {
+        for &wall in walls {
             if rl.CheckCollisionCircleRec(particle.center, LIQUID_RADIUS, wall.rec) {
+                wall.color = ngui.lerp_color(wall.color, LIQUID_COLOR, 0.5)
                 // @HACK: last element will be skipped because of swap.
                 unordered_remove(&liquid, i)
+                continue outer
+            }
+        }
+
+        // Particle vs particle.
+        for &particle_b, j in liquid do if i != j {
+            if rl.CheckCollisionCircles(particle.center, LIQUID_RADIUS, particle_b.center, LIQUID_RADIUS) {
+                ab := particle_b.center - particle.center
+                dir := linalg.normalize(ab)
+
+                // Nudge the particles away from each other.
+                particle.vel   -= grid.CELL_SIZE * dir * dt
+                particle_b.vel += grid.CELL_SIZE * dir * dt
             }
         }
     }

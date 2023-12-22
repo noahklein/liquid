@@ -74,8 +74,11 @@ gui_draw :: proc() {
             ngui.float(&camera.zoom, min = 0.1, max = 10, label = "Zoom")
             ngui.float(&camera.rotation, min = -360, max = 360, label = "Angle")
         }
-        if ngui.flex_row({1}) {
+        if ngui.flex_row({0.5, 0.5}) {
             ngui.float(&timescale, 0, 10, label = "Timescale")
+            if ngui.button("Play" if timescale == 0 else "Pause") || rl.IsKeyPressed(.SPACE) {
+                timescale = 1 if timescale == 0 else 0
+            }
         }
 
         if ngui.flex_row({0.2, 0.3, 0.3, 0.2}) {
@@ -83,6 +86,11 @@ gui_draw :: proc() {
             ngui.vec2(&player.pos, label = "Position")
             ngui.vec2(&player.vel, label = "Velocity")
             ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
+        }
+
+        if ngui.flex_row({0.2, 0.2}) {
+            ngui.text("Walls %d", len(world.walls))
+            ngui.text("Particles %d", len(world.liquid))
         }
     }
 

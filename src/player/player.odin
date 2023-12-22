@@ -107,7 +107,7 @@ fixed_update :: proc(dt: f32) {
             if rl.CheckCollisionCircleRec(particle.center, world.LIQUID_RADIUS, tank_rect) {
                 if fullness >= 1 {
                     fullness = 1
-                    particle.vel.y *= -0.5
+                    particle.vel.y *= -1
                     particle.vel.x += (rand.float32() - 0.5) * 4 * grid.CELL_SIZE * dt
                     continue
                 }
