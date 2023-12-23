@@ -6,7 +6,7 @@ import rl "vendor:raylib"
 import "../grid"
 
 BOUND_SIZE :: 20 * grid.CELL_SIZE
-BOUNDING_BOX :: rl.Rectangle{
+BOX :: rl.Rectangle{
     -BOUND_SIZE / 2, -BOUND_SIZE / 2,
     BOUND_SIZE, BOUND_SIZE,
 }
@@ -14,18 +14,18 @@ BOUNDING_BOX :: rl.Rectangle{
 particles: [dynamic]Particle
 
 smoothing_radius: f32 = grid.CELL_SIZE
-collision_damp  : f32 = 0.95
+collision_damp  : f32 = 0.9
 target_density  : f32 = 2.75
 pressure_mult   : f32 = 10
 
-// GRAVITY :: 10 * grid.CELL_SIZE
-GRAVITY :: 0
+GRAVITY :: 10 * grid.CELL_SIZE
+// GRAVITY :: 0
 RADIUS  :: grid.CELL_SIZE / 8
 COLOR   :: rl.BLUE
 
 Particle :: struct {
     pos, vel: rl.Vector2,
-    density, property: f32,
+    density: f32,
 }
 
 init :: proc(size: int) {
@@ -37,16 +37,18 @@ deinit :: proc() {
  }
 
 draw2D :: proc() {
+    rl.DrawRectangleRec(BOX, rl.BLACK)
+
+    // rl.DrawRectangleLinesEx(BOX, 1, rl.BLACK + 30 * {1, 1, 1, 0})
+
     for particle in particles {
         rl.DrawCircleV(particle.pos, RADIUS, COLOR)
     }
-
-    rl.DrawRectangleLinesEx(BOUNDING_BOX, 2, rl.BLACK)
 }
 
 update :: proc(dt: f32) {
     for &p in particles {
-        // p.vel.y += GRAVITY * dt
+        p.vel.y += GRAVITY * dt
         p.density = calc_density(p.pos)
     }
 
@@ -59,12 +61,16 @@ update :: proc(dt: f32) {
         p.pos += p.vel * dt
 
         {
+            bmin :: rl.Vector2{BOX.x + RADIUS, BOX.y + RADIUS}
+            bmax :: rl.Vector2{BOX.x + BOX.width - RADIUS, BOX.y + BOX.height - RADIUS}
             // Keep in bounding-box.
-            if p.pos.x < BOUNDING_BOX.x || p.pos.x > BOUNDING_BOX.x + BOUNDING_BOX.width {
+            if p.pos.x < bmin.x || p.pos.x > bmax.x {
                 p.vel.x *= -collision_damp
+                p.pos.x = clamp(p.pos.x, bmin.x, bmax.x)
             }
-            if p.pos.y < BOUNDING_BOX.y || p.pos.y > BOUNDING_BOX.y + BOUNDING_BOX.height {
+            if p.pos.y < bmin.y || p.pos.y > bmax.y {
                 p.vel.y *= -collision_damp
+                p.pos.y = clamp(p.pos.y, bmin.y, bmax.y)
             }
         }
 
@@ -76,13 +82,10 @@ create :: proc(quantity: int) {
     reserve(&particles, quantity)
     for _ in 0..<quantity {
         pos := rl.Vector2{
-            BOUNDING_BOX.x + rand.float32() * (BOUNDING_BOX.width),
-            BOUNDING_BOX.y + rand.float32() * (BOUNDING_BOX.height),
+            BOX.x + rand.float32() * (BOX.width),
+            BOX.y + rand.float32() * (BOX.height),
         }
-        append(&particles, Particle{
-            pos = pos,
-            property = example_function(pos),
-        })
+        append(&particles, Particle{ pos = pos })
     }
 }
 
@@ -91,25 +94,6 @@ calc_density :: proc(sample_point: rl.Vector2) -> (density: f32) {
         dist := linalg.length(particle.pos - sample_point)
         influence := smoothing_kernel(smoothing_radius, dist)
         density += influence
-    }
-    return
-}
-
-calc_property :: proc(sample_point: rl.Vector2) -> (property: f32) {
-    for p in particles {
-        dist := linalg.length(p.pos - sample_point)
-        influence := smoothing_kernel(smoothing_radius, dist)
-        property += p.property * influence / p.density
-    }
-    return
-}
-
-calc_property_gradient :: proc(sample_point: rl.Vector2) -> (gradient: rl.Vector2) {
-    for p in particles {
-        dist := linalg.length(p.pos - sample_point)
-        dir := (p.pos - sample_point) / dist
-        slope := smoothing_kernel_derivative(smoothing_radius, dist)
-        gradient += -p.property * dir * slope / p.density
     }
     return
 }
@@ -138,10 +122,6 @@ smoothing_kernel_derivative :: proc(radius, dist: f32) -> f32 {
     if dist >= radius do return 0
     scale := 12 / linalg.pow(radius, 4) * linalg.PI
     return (dist - radius) * scale
-}
-
-example_function :: proc(pos: rl.Vector2) -> f32 {
-    return linalg.cos(pos.y - 3 + linalg.sin(pos.x))
 }
 
 density_to_presure :: proc(density: f32) -> f32 {

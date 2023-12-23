@@ -100,7 +100,13 @@ gui_draw :: proc() {
             ngui.float(&liquid.collision_damp, min = 0.1, max = 1, label = "Collision Damping")
             ngui.float(&liquid.target_density, min = 0.1, max = 20, label = "Target Density")
             ngui.float(&liquid.pressure_mult, min = 0.1, max = 500, label = "Pressure Mult")
-
+        }
+        if ngui.flex_row({1}) {
+            if ngui.button("Stop all particles") {
+                for &p in liquid.particles {
+                    p.vel = 0
+                }
+            }
         }
     }
 

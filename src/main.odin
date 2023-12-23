@@ -56,9 +56,9 @@ main :: proc() {
     // })
 
 
-    liquid.init(256)
+    liquid.init(512)
     defer liquid.deinit()
-    liquid.create(256)
+    liquid.create(512)
 
     defer delete(player.broad_hits)
 
@@ -82,7 +82,7 @@ main :: proc() {
 
         rl.BeginDrawing()
         defer rl.EndDrawing()
-        rl.ClearBackground(rl.PURPLE)
+        rl.ClearBackground(rl.LIGHTGRAY)
 
         rl.BeginMode2D(camera)
             player.draw2D()
