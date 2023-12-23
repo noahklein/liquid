@@ -1,12 +1,13 @@
 package liquid
 
+import "core:fmt"
 import "core:math/linalg"
 import "core:math/rand"
 import rl "vendor:raylib"
 import "../grid"
 
 BOUND_SIZE :: 20 * grid.CELL_SIZE
-BOX :: rl.Rectangle{
+BOX := rl.Rectangle{
     -BOUND_SIZE / 2, -BOUND_SIZE / 2,
     BOUND_SIZE, BOUND_SIZE,
 }
@@ -47,7 +48,9 @@ draw2D :: proc() {
     rl.DrawRectangleRec(BOX, rl.BLACK)
 
     for particle in particles {
-        rl.DrawCircleV(particle.pos, RADIUS, COLOR)
+        color := rl.BLUE
+        // color.r = u8(particle.density * 32 * 255)
+        rl.DrawCircleV(particle.pos, RADIUS, color)
     }
 }
 
@@ -74,12 +77,13 @@ fixed_update :: proc(dt: f32) {
         p.vel += accel * dt
     }
 
+
+    // TODO: precalculate these
+    bmin := rl.Vector2{BOX.x + RADIUS, BOX.y + RADIUS}
+    bmax := rl.Vector2{BOX.x + BOX.width - RADIUS, BOX.y + BOX.height - RADIUS}
     for &p in particles {
         p.pos += p.vel * dt
-
         {
-            bmin :: rl.Vector2{BOX.x + RADIUS, BOX.y + RADIUS}
-            bmax :: rl.Vector2{BOX.x + BOX.width - RADIUS, BOX.y + BOX.height - RADIUS}
             // Keep in bounding-box.
             if p.pos.x < bmin.x && p.vel.x < 0 {
                 p.vel.x *= -collision_damp

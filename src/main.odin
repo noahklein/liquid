@@ -16,6 +16,7 @@ import "world/liquid"
 
 timescale : f32 = 1.0
 camera: rl.Camera2D
+liquid_box_target: rl.Vector2
 
 main :: proc() {
       when ODIN_DEBUG {
@@ -80,9 +81,16 @@ main :: proc() {
             camera.target += (player.pos - camera.target) * rl.GetFrameTime() // Unaffected by timescale
         }
 
+        if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
+            liquid_box_target = rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+
+        }
+        liquid.BOX.x = linalg.lerp(liquid.BOX.x, liquid_box_target.x, dt)
+        liquid.BOX.y = linalg.lerp(liquid.BOX.y, liquid_box_target.y, dt)
+
         rl.BeginDrawing()
         defer rl.EndDrawing()
-        rl.ClearBackground(rl.LIGHTGRAY + {10, 10, 10, 0})
+        rl.ClearBackground(rl.LIGHTGRAY - 5 * {10, 0, 10, 0})
 
         rl.BeginMode2D(camera)
             player.draw2D()

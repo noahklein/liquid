@@ -63,7 +63,7 @@ gui_draw :: proc() {
             gui_drag(cursor)
             if !ngui.want_mouse() {
                 rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
-                grid.draw(camera)
+                // grid.draw(camera)
             }
         rl.EndMode2D()
     }
@@ -101,11 +101,19 @@ gui_draw :: proc() {
             ngui.float(&liquid.target_density, min = 0.1, max = 200, label = "Target Density")
             ngui.float(&liquid.pressure_mult, min = 0.1, max = 500, label = "Pressure Mult")
         }
-        if ngui.flex_row({1}) {
+        if ngui.flex_row({0.4, 0.3, 0.3}) {
             if ngui.button("Stop all particles") {
                 for &p in liquid.particles {
                     p.vel = 0
                 }
+            }
+
+            SPAWN_STEP :: 16
+            if ngui.button("Less") {
+                liquid.create(cap(liquid.particles) - SPAWN_STEP)
+            }
+            if ngui.button("More") {
+                liquid.create(cap(liquid.particles) + SPAWN_STEP)
             }
         }
     }
