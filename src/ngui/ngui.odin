@@ -276,5 +276,5 @@ want_keyboard :: #force_inline proc() -> bool {
 
 @(require_results)
 want_mouse :: #force_inline proc() -> bool {
-    return state.hovered_panel != nil
+    return state.hovered_panel != nil || state.dragging != nil || state.button_pressed != nil
 }

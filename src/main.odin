@@ -82,7 +82,7 @@ main :: proc() {
 
         rl.BeginDrawing()
         defer rl.EndDrawing()
-        rl.ClearBackground(rl.LIGHTGRAY)
+        rl.ClearBackground(rl.LIGHTGRAY + {10, 10, 10, 0})
 
         rl.BeginMode2D(camera)
             player.draw2D()

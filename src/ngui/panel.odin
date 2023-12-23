@@ -60,6 +60,7 @@ begin_panel :: proc(title: cstring, rect: rl.Rectangle) -> bool {
     body_rect.height = rect.height - TITLE_HEIGHT
     body_rect.y = rect.y + TITLE_HEIGHT
     rl.DrawRectangleRec(body_rect, PANEL_COLOR)
+    rl.DrawRectangleLinesEx(body_rect, 1, title_color(state.dragging == title)) // Border around body.
 
     {
         // Resize window.
