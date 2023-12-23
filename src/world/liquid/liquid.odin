@@ -13,19 +13,26 @@ BOX :: rl.Rectangle{
 
 particles: [dynamic]Particle
 
-smoothing_radius: f32 = grid.CELL_SIZE
+smoothing_radius: f32 = 2 * grid.CELL_SIZE
 collision_damp  : f32 = 0.9
 target_density  : f32 = 2.75
-pressure_mult   : f32 = 10
+pressure_mult   : f32 = grid.CELL_SIZE
+
+FIXED_DT :: 1.0 / 120.0
+dt_acc: f32
 
 GRAVITY :: 10 * grid.CELL_SIZE
 // GRAVITY :: 0
-RADIUS  :: grid.CELL_SIZE / 8
+RADIUS  :: 2 * grid.CELL_SIZE / 8
 COLOR   :: rl.BLUE
 
 Particle :: struct {
     pos, vel: rl.Vector2,
     density: f32,
+}
+
+stats : struct{
+    update, fixed: int,
 }
 
 init :: proc(size: int) {
@@ -39,14 +46,24 @@ deinit :: proc() {
 draw2D :: proc() {
     rl.DrawRectangleRec(BOX, rl.BLACK)
 
-    // rl.DrawRectangleLinesEx(BOX, 1, rl.BLACK + 30 * {1, 1, 1, 0})
-
     for particle in particles {
         rl.DrawCircleV(particle.pos, RADIUS, COLOR)
     }
 }
 
 update :: proc(dt: f32) {
+    stats.update += 1
+
+    dt_acc += dt
+    for dt_acc >= FIXED_DT {
+        dt_acc -= FIXED_DT
+        fixed_update(FIXED_DT)
+    }
+}
+
+fixed_update :: proc(dt: f32) {
+    stats.fixed += 1
+
     for &p in particles {
         p.vel.y += GRAVITY * dt
         p.density = calc_density(p.pos)

@@ -92,13 +92,13 @@ gui_draw :: proc() {
         }
 
         if ngui.flex_row({0.2, 0.2}) {
-            ngui.text("Walls %d", len(world.walls))
-            ngui.text("Particles %d", len(world.liquid))
+            ngui.text("Update: %d", liquid.stats.update)
+            ngui.text("Fixed: %d", liquid.stats.fixed)
         }
         if ngui.flex_row({0.25, 0.25, 0.25, 0.25}) {
             ngui.float(&liquid.smoothing_radius, min = 0.1, max = 100, label = "Smoothing Radius")
             ngui.float(&liquid.collision_damp, min = 0.1, max = 1, label = "Collision Damping")
-            ngui.float(&liquid.target_density, min = 0.1, max = 20, label = "Target Density")
+            ngui.float(&liquid.target_density, min = 0.1, max = 200, label = "Target Density")
             ngui.float(&liquid.pressure_mult, min = 0.1, max = 500, label = "Pressure Mult")
         }
         if ngui.flex_row({1}) {

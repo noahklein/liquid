@@ -56,9 +56,9 @@ main :: proc() {
     // })
 
 
-    liquid.init(512)
+    liquid.init(128)
     defer liquid.deinit()
-    liquid.create(512)
+    liquid.create(128)
 
     defer delete(player.broad_hits)
 
