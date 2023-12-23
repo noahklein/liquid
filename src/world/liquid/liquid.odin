@@ -81,14 +81,17 @@ fixed_update :: proc(dt: f32) {
             bmin :: rl.Vector2{BOX.x + RADIUS, BOX.y + RADIUS}
             bmax :: rl.Vector2{BOX.x + BOX.width - RADIUS, BOX.y + BOX.height - RADIUS}
             // Keep in bounding-box.
-            if p.pos.x < bmin.x || p.pos.x > bmax.x {
+            if p.pos.x < bmin.x && p.vel.x < 0 {
                 p.vel.x *= -collision_damp
-                p.pos.x = clamp(p.pos.x, bmin.x, bmax.x)
+            } else if p.pos.x > bmax.x && p.vel.x > 0 {
+                p.vel.x *= -collision_damp
             }
-            if p.pos.y < bmin.y || p.pos.y > bmax.y {
+            if p.pos.y < bmin.y && p.vel.y < 0 {
                 p.vel.y *= -collision_damp
-                p.pos.y = clamp(p.pos.y, bmin.y, bmax.y)
+            } else if p.pos.y > bmax.y && p.vel.y > 0 {
+                p.vel.y *= -collision_damp
             }
+            p.pos = linalg.clamp(p.pos, bmin, bmax)
         }
 
     }
@@ -119,7 +122,7 @@ calc_pressure_force :: proc(particle_index: int) -> (force: rl.Vector2) {
     other_p := particles[particle_index]
     for p, i in particles do if i != particle_index {
         dist := linalg.length(p.pos - other_p.pos)
-        dir := (p.pos - other_p.pos) / dist if dist != 0 else {1, 0}
+        dir := (p.pos - other_p.pos) / dist if dist != 0 else rand_direction()
         slope := smoothing_kernel_derivative(smoothing_radius, dist)
 
         avg_pressure := (density_to_presure(p.density) + density_to_presure(other_p.density)) / 2
@@ -163,4 +166,9 @@ draw_arrow :: proc(start, end: rl.Vector2, color: rl.Color) {
 
     rl.DrawLineEx(start, end, LINE_THICKNESS, color)
     rl.DrawTriangle(v1, v2, v3, color)
+}
+
+rand_direction :: proc() -> rl.Vector2 {
+    r := rand.float32() * linalg.TAU
+    return {linalg.cos(r), linalg.sin(r)}
 }
