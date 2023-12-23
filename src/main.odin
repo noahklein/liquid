@@ -1,8 +1,10 @@
 package main
 
 import "core:fmt"
+import "core:math"
 import "core:math/linalg"
 import "core:mem"
+import "core:math/rand"
 
 import rl "vendor:raylib"
 
@@ -10,6 +12,7 @@ import "player"
 import "ngui"
 import "world"
 import "world/grid"
+import "world/liquid"
 
 timescale : f32 = 1.0
 camera: rl.Camera2D
@@ -46,10 +49,16 @@ main :: proc() {
     world.init()
     defer world.deinit()
 
+
     // Spawn liquid emitter for testing.
-    append(&world.liquid_emitters, world.LiquidEmitter{
-        pos = {10 * grid.CELL_SIZE, -8 * grid.CELL_SIZE},
-    })
+    // append(&world.emitters, world.LiquidEmitter{
+    //     pos = {10 * grid.CELL_SIZE, -8 * grid.CELL_SIZE},
+    // })
+
+
+    liquid.init(256)
+    defer liquid.deinit()
+    liquid.create(256)
 
     defer delete(player.broad_hits)
 
@@ -64,6 +73,7 @@ main :: proc() {
 
         dt := rl.GetFrameTime() * timescale
         world.liquid_update(dt)
+        liquid.update(dt)
         player.update(dt)
 
         if linalg.distance(camera.target, player.pos) > 3 * grid.CELL_SIZE {
@@ -77,6 +87,7 @@ main :: proc() {
         rl.BeginMode2D(camera)
             player.draw2D()
             world.draw2D()
+            liquid.draw2D()
         rl.EndMode2D()
 
         when ODIN_DEBUG {

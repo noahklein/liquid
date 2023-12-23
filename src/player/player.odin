@@ -101,14 +101,16 @@ fixed_update :: proc(dt: f32) {
     pos += vel * dt
 
     {
-        tank_rect := get_tank_rect(player_rect)
         // Check liquid tank collision.
+        tank_rect := get_tank_rect(player_rect)
         for &particle, i in world.liquid {
             if rl.CheckCollisionCircleRec(particle.center, world.LIQUID_RADIUS, tank_rect) {
                 if fullness >= 1 {
                     fullness = 1
-                    particle.vel.y *= -1
-                    particle.vel.x += (rand.float32() - 0.5) * 4 * grid.CELL_SIZE * dt
+                    particle.vel *= -1
+                    // particle.vel.y *= -1
+                    // particle.vel.x += (rand.float32() - 0.5) * 100 * grid.CELL_SIZE * dt
+                    // particle.vel.x += (rand.float32() - 0.5) * MAX_SPEED / 2
                     continue
                 }
 

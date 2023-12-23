@@ -8,20 +8,24 @@ import "grid"
 import "core:math/rand"
 import "../ngui"
 
+FIXED_DT :: 1.0 / 120.0
+
 LIQUID_COLOR  :: rl.BLUE
 LIQUID_RADIUS :: grid.CELL_SIZE / 8
+// LIQUID_RADIUS :: grid.CELL_SIZE / 4
 LIQUID_GRAVITY  :: 5 * grid.CELL_SIZE
 MAX_PARTICLE_SPEED :: 10 * grid.CELL_SIZE
-EMITTER_FIRE_SECONDS :: 0.2
+EMITTER_FIRE_SECONDS :: 0.1
 
-walls: [dynamic]Wall
+walls:  [dynamic]Wall
 liquid: [dynamic]LiquidParticle
-liquid_emitters: [dynamic]LiquidEmitter
+emitters: [dynamic]LiquidEmitter
+dt_acc: f32
 
 init :: proc() {
     // reserve(&walls, 128)
     reserve(&liquid, 128)
-    reserve(&liquid_emitters, 16)
+    reserve(&emitters, 16)
     reserve(&walls, 1024)
 
     for x in 0..<cap(walls) {
@@ -36,7 +40,7 @@ init :: proc() {
 deinit :: proc() {
     delete(walls)
     delete(liquid)
-    delete(liquid_emitters)
+    delete(emitters)
 }
 
 Wall :: struct{
@@ -51,14 +55,27 @@ LiquidEmitter :: struct {
 
 LiquidParticle :: struct {
     center, vel: rl.Vector2,
+    color: rl.Color,
 }
 
 liquid_update :: proc(dt: f32) {
-    for &emitter in liquid_emitters {
+    dt_acc += dt
+    for dt_acc >= FIXED_DT {
+        dt_acc -= FIXED_DT
+        liquid_fixed_update(FIXED_DT)
+    }
+}
+
+liquid_fixed_update :: proc(dt: f32) {
+    for &emitter in emitters {
         emitter.dt_acc += dt
         if emitter.dt_acc >= EMITTER_FIRE_SECONDS {
             emitter.dt_acc -= EMITTER_FIRE_SECONDS
-            append(&liquid, LiquidParticle{ center = emitter.pos })
+            append(&liquid, LiquidParticle{
+                center = emitter.pos,
+                vel = {(rand.float32() - 0.5) * grid.CELL_SIZE, LIQUID_GRAVITY},
+                color = {0, 0, u8(rand.float32() * 100) + 155, 255},
+             })
         }
     }
 
@@ -69,7 +86,7 @@ liquid_update :: proc(dt: f32) {
 
         for &wall in walls {
             if rl.CheckCollisionCircleRec(particle.center, LIQUID_RADIUS, wall.rec) {
-                wall.color = ngui.lerp_color(wall.color, LIQUID_COLOR, 0.5)
+                wall.color = ngui.lerp_color(wall.color, LIQUID_COLOR, 0.25)
                 // @HACK: last element will be skipped because of swap.
                 unordered_remove(&liquid, i)
                 continue outer
@@ -77,14 +94,28 @@ liquid_update :: proc(dt: f32) {
         }
 
         // Particle vs particle.
-        for &particle_b, j in liquid do if i != j {
+        for &particle_b in liquid[i+1:] {
             if rl.CheckCollisionCircles(particle.center, LIQUID_RADIUS, particle_b.center, LIQUID_RADIUS) {
-                ab := particle_b.center - particle.center
-                dir := linalg.normalize(ab)
+                // ab := particle_b.center - particle.center
+                // dir := linalg.normalize(ab)
 
-                // Nudge the particles away from each other.
-                particle.vel   -= grid.CELL_SIZE * dir * dt
-                particle_b.vel += grid.CELL_SIZE * dir * dt
+                // Particles bounce away from each other.
+                // particle.vel = linalg.length(particle.vel) * -dir
+                // particle_b.vel = linalg.length(particle_b.vel) * dir
+
+                // Vecter perpendicular to {x, y} is {-y, x}.
+                normal := linalg.normalize(rl.Vector2{
+                      particle_b.center.y - particle.center.y,
+                    -(particle_b.center.x - particle.center.x),
+                })
+
+                rel_vel := particle_b.vel - particle.vel
+                length := linalg.dot(rel_vel, normal)
+
+                delta_vel := rel_vel - length * normal
+                particle.vel   -= delta_vel
+                particle_b.vel += delta_vel
+
             }
         }
     }
@@ -104,10 +135,10 @@ draw2D :: proc() {
     }
 
     for particle in liquid {
-        rl.DrawCircleV(particle.center, LIQUID_RADIUS, LIQUID_COLOR)
+        rl.DrawCircleV(particle.center, LIQUID_RADIUS, particle.color)
     }
 
-    when ODIN_DEBUG do for emitter in liquid_emitters {
+    when ODIN_DEBUG do for emitter in emitters {
         EMITTER_SIZE :: rl.Vector2{10, 10}
         rl.DrawRectangleV(emitter.pos - EMITTER_SIZE, EMITTER_SIZE, {0, 200, 0, 150})
     }
