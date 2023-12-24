@@ -91,13 +91,17 @@ gui_draw :: proc() {
             ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
         }
 
-        if ngui.flex_row({0.2, 0.2}) {
+        if ngui.flex_row({0.25, 0.25, 0.25, 0.25}) {
             ngui.text("Update: %d", liquid.stats.update)
             ngui.text("Fixed: %d", liquid.stats.fixed)
+            ngui.text("Particles: %d", len(liquid.particles))
+            if liquid.stats.neighbor_count != 0 {
+                ngui.text("Avg Neighbors: %d", liquid.stats.neighbors / liquid.stats.neighbor_count)
+            }
         }
         if ngui.flex_row({0.25, 0.25, 0.25, 0.25}) {
             ngui.float(&liquid.smoothing_radius, min = 0.1, max = 100, label = "Smoothing Radius")
-            ngui.float(&liquid.collision_damp, min = 0.1, max = 1, label = "Collision Damping")
+            ngui.float(&liquid.collision_damp, min = 0.1, max = 1, step = 0.01, label = "Collision Damping")
             ngui.float(&liquid.target_density, min = 0.1, max = 200, label = "Target Density")
             ngui.float(&liquid.pressure_mult, min = 0.1, max = 500, label = "Pressure Mult")
         }
@@ -110,10 +114,10 @@ gui_draw :: proc() {
 
             SPAWN_STEP :: 16
             if ngui.button("Less") {
-                liquid.create(cap(liquid.particles) - SPAWN_STEP)
+                liquid.create(len(liquid.particles) - SPAWN_STEP)
             }
             if ngui.button("More") {
-                liquid.create(cap(liquid.particles) + SPAWN_STEP)
+                liquid.create(len(liquid.particles) + SPAWN_STEP)
             }
         }
     }

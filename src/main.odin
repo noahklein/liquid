@@ -57,9 +57,9 @@ main :: proc() {
     // })
 
 
-    liquid.init(128)
+    // liquid.init(512)
+    liquid.create(512)
     defer liquid.deinit()
-    liquid.create(128)
 
     defer delete(player.broad_hits)
 
@@ -83,10 +83,11 @@ main :: proc() {
 
         if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
             liquid_box_target = rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-
         }
-        liquid.BOX.x = linalg.lerp(liquid.BOX.x, liquid_box_target.x, dt)
-        liquid.BOX.y = linalg.lerp(liquid.BOX.y, liquid_box_target.y, dt)
+        if liquid_box_target != 0 && linalg.distance(liquid_box_target, rl.Vector2{liquid.BOX.x, liquid.BOX.y}) > grid.CELL_SIZE {
+            liquid.BOX.x = linalg.lerp(liquid.BOX.x, liquid_box_target.x, dt)
+            liquid.BOX.y = linalg.lerp(liquid.BOX.y, liquid_box_target.y, dt)
+        }
 
         rl.BeginDrawing()
         defer rl.EndDrawing()

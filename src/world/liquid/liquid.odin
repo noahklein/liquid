@@ -6,42 +6,46 @@ import "core:math/rand"
 import rl "vendor:raylib"
 import "../grid"
 
-BOUND_SIZE :: 20 * grid.CELL_SIZE
+// TODO: clean this up and make it gui editable.
+BOUND_SIZE :: 50 * grid.CELL_SIZE
 BOX := rl.Rectangle{
     -BOUND_SIZE / 2, -BOUND_SIZE / 2,
     BOUND_SIZE, BOUND_SIZE,
 }
 
-particles: [dynamic]Particle
+particles  : [dynamic]Particle
+stats : struct{ update, fixed, neighbors, neighbor_count: int }
 
+// Gui properties.
 smoothing_radius: f32 = 2 * grid.CELL_SIZE
 collision_damp  : f32 = 0.9
 target_density  : f32 = 2.75
-pressure_mult   : f32 = grid.CELL_SIZE
+pressure_mult   : f32 = grid.CELL_SIZE / 2
 
 FIXED_DT :: 1.0 / 120.0
 dt_acc: f32
 
 GRAVITY :: 10 * grid.CELL_SIZE
 // GRAVITY :: 0
-RADIUS  :: 2 * grid.CELL_SIZE / 8
-COLOR   :: rl.BLUE
+RADIUS  :: grid.CELL_SIZE / 8
 
 Particle :: struct {
     pos, vel: rl.Vector2,
     density: f32,
 }
 
-stats : struct{
-    update, fixed: int,
-}
-
 init :: proc(size: int) {
     reserve(&particles, size)
+    reserve(&grid_lookup, size)
+    reserve(&start_index, size)
+    reserve(&_particles_in_range, size)
 }
 
 deinit :: proc() {
     delete(particles)
+    delete(grid_lookup)
+    delete(start_index)
+    delete(_particles_in_range)
  }
 
 draw2D :: proc() {
@@ -49,7 +53,6 @@ draw2D :: proc() {
 
     for particle in particles {
         color := rl.BLUE
-        // color.r = u8(particle.density * 32 * 255)
         rl.DrawCircleV(particle.pos, RADIUS, color)
     }
 }
@@ -66,6 +69,8 @@ update :: proc(dt: f32) {
 
 fixed_update :: proc(dt: f32) {
     stats.fixed += 1
+
+    update_grid_lookup(smoothing_radius)
 
     for &p in particles {
         p.vel.y += GRAVITY * dt
@@ -102,8 +107,9 @@ fixed_update :: proc(dt: f32) {
 }
 
 create :: proc(quantity: int) {
+    init(quantity)
     clear(&particles)
-    reserve(&particles, quantity)
+
     for _ in 0..<quantity {
         pos := rl.Vector2{
             BOX.x + rand.float32() * (BOX.width),
@@ -114,7 +120,8 @@ create :: proc(quantity: int) {
 }
 
 calc_density :: proc(sample_point: rl.Vector2) -> (density: f32) {
-    for particle in particles {
+    for particle in particles_near_point(sample_point, smoothing_radius) {
+    // for particle in particles {
         dist := linalg.length(particle.pos - sample_point)
         influence := smoothing_kernel(smoothing_radius, dist)
         density += influence
@@ -124,7 +131,13 @@ calc_density :: proc(sample_point: rl.Vector2) -> (density: f32) {
 
 calc_pressure_force :: proc(particle_index: int) -> (force: rl.Vector2) {
     other_p := particles[particle_index]
-    for p, i in particles do if i != particle_index {
+    neighbors := particles_near_point(other_p.pos, smoothing_radius)
+
+    stats.neighbors += len(neighbors)
+    stats.neighbor_count += 1
+
+    for p in neighbors do if p.index != particle_index {
+    // for p, i in particles do if i != particle_index {
         dist := linalg.length(p.pos - other_p.pos)
         dir := (p.pos - other_p.pos) / dist if dist != 0 else rand_direction()
         slope := smoothing_kernel_derivative(smoothing_radius, dist)
