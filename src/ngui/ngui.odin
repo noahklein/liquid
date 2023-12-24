@@ -249,14 +249,23 @@ arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring) {
     }
     active := key == state.dragging
     if active && rl.IsMouseButtonDown(.LEFT) {
+        dir := linalg.normalize(state.mouse - center)
+
+        // Snap to axes.
+        UNIT_DIRECTIONS :: [?]rl.Vector2{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+        for unit in UNIT_DIRECTIONS {
+            if linalg.dot(dir, unit) > 0.99 {
+                dir = unit
+            }
+        }
+
         // Dragging the arrow changes direction, but maintains magnitude.
-        vec^ = linalg.length(vec^) * linalg.normalize(state.mouse - center)
+        vec^ = linalg.length(vec^) * dir
     }
 
     rl.DrawRectangleRec(arrow_rect, dark_color(hover, active))
     end := center + linalg.normalize(vec^) * arrow_rect.height / 4
-    draw_arrow(center, end, 3, rl.WHITE)
-
+    draw_arrow(center, end, 3, TEXT_COLOR)
 
     // Magnitude is a float editor. Changing magnitude, maintains direction.
     magnitude_rect := rect

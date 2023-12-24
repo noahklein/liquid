@@ -22,7 +22,7 @@ stats : struct{ update, fixed, neighbors, neighbor_count: int }
 
 // Gui properties.
 smoothing_radius: f32 = 2 * grid.CELL_SIZE
-collision_damp  : f32 = 0.9
+collision_damp  : f32 = 0.6
 target_density  : f32 = 12
 pressure_mult   : f32 = grid.CELL_SIZE / 2
 
