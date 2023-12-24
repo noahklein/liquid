@@ -29,7 +29,7 @@ pressure_mult   : f32 = grid.CELL_SIZE / 2
 FIXED_DT :: 1.0 / 120.0
 dt_acc: f32
 
-GRAVITY :: 2 * grid.CELL_SIZE
+GRAVITY := rl.Vector2{0, 2 * grid.CELL_SIZE}
 // GRAVITY :: 0
 RADIUS  ::  grid.CELL_SIZE / 3
 
@@ -94,7 +94,7 @@ fixed_update :: proc(dt: f32) {
     stats.fixed += 1
 
     for &p, i in particles {
-        p.vel.y += GRAVITY * dt
+        p.vel += GRAVITY * dt
         prediced_pos[i] = p.pos + p.vel * dt
     }
 
@@ -180,25 +180,6 @@ smoothing_kernel_derivative :: proc(radius, dist: f32) -> f32 {
 density_to_presure :: proc(density: f32) -> f32 {
     error := density - target_density
     return error * pressure_mult
-}
-
-draw_arrow :: proc(start, end: rl.Vector2, color: rl.Color) {
-    ARROW_HEIGHT :: 30
-    ARROW_WIDTH  :: ARROW_HEIGHT / 1.73205 // approx sqrt(3), ratio in an equilateral triangle.
-    LINE_THICKNESS :: ARROW_HEIGHT / 3
-
-    slope := linalg.normalize(end - start)
-    v1 := end + slope * ARROW_HEIGHT  // Pointy-tip, continue along the line.
-
-    // Other 2 arrow-head vertices are perpendicular to the end point.
-    // Perpendicular line has negative reciprical slope: -(x2 - x1) / (y2 - y1)
-    slope.x, slope.y = slope.y, -slope.x
-
-    v2 := end + slope * ARROW_WIDTH
-    v3 := end - slope * ARROW_WIDTH
-
-    rl.DrawLineEx(start, end, LINE_THICKNESS, color)
-    rl.DrawTriangle(v1, v2, v3, color)
 }
 
 rand_direction :: proc() -> rl.Vector2 {

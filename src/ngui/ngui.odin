@@ -231,6 +231,67 @@ toggle_rect :: proc(rect: rl.Rectangle, label: cstring, selected: bool) -> bool 
     return press
 }
 
+arrow :: proc(vec: ^rl.Vector2, label: cstring) {
+    rect := flex_rect()
+    arrow_rect(rect, vec, label)
+}
+
+// An alternative vector edit component for direction and magnitude. Mostly used for gravity.
+arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring) {
+    arrow_rect := rect
+    arrow_rect.width = rect.height
+    center := rl.Vector2{arrow_rect.x + arrow_rect.width / 2, arrow_rect.y + arrow_rect.height / 2}
+
+    hover := hovered(arrow_rect)
+    key := fmt.ctprintf("arrow#%v", label)
+    if hover && rl.IsMouseButtonPressed(.LEFT) {
+        state.dragging = key
+    }
+    active := key == state.dragging
+    if active && rl.IsMouseButtonDown(.LEFT) {
+        // Dragging the arrow changes direction, but maintains magnitude.
+        vec^ = linalg.length(vec^) * linalg.normalize(state.mouse - center)
+    }
+
+    rl.DrawRectangleRec(arrow_rect, dark_color(hover, active))
+    end := center + linalg.normalize(vec^) * arrow_rect.height / 4
+    draw_arrow(center, end, 3, rl.WHITE)
+
+
+    // Magnitude is a float editor. Changing magnitude, maintains direction.
+    magnitude_rect := rect
+    magnitude_rect.x = arrow_rect.x + arrow_rect.width + 2
+    magnitude_rect.width = rect.width - arrow_rect.width
+
+    magnitude := linalg.length(vec^)
+    magnitude_prime := magnitude // copy
+    float_rect(magnitude_rect, &magnitude_prime, min = 0, label = label)
+
+    if magnitude == 0 {
+        vec^ = magnitude_prime // normalize() would divide by zero.
+    } else {
+        vec^ = linalg.normalize(vec^) * magnitude_prime
+    }
+}
+
+draw_arrow :: proc(start, end: rl.Vector2, thickness: f32, color: rl.Color) {
+    arrow_height := thickness * 3
+    arrow_width  := arrow_height / linalg.SQRT_THREE // Ratio in equilateral triangle.
+
+    slope := linalg.normalize(end - start)
+    v1 := end + slope * arrow_height  // Pointy-tip, continue along the line.
+
+    // Other 2 arrow-head vertices are perpendicular to the end point.
+    // Perpendicular line has negative reciprical slope: -(x2 - x1) / (y2 - y1)
+    slope.x, slope.y = slope.y, -slope.x
+
+    v2 := end + slope * arrow_width
+    v3 := end - slope * arrow_width
+
+    rl.DrawLineEx(start, end, thickness, color)
+    rl.DrawTriangle(v1, v2, v3, color)
+}
+
 
 // Splits a rectangle up into its label and body components.
 @(require_results)

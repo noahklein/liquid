@@ -120,6 +120,10 @@ gui_draw :: proc() {
                 liquid.create(len(liquid.particles) + SPAWN_STEP)
             }
         }
+
+        if ngui.flex_row({0.3}) {
+            ngui.arrow(&liquid.GRAVITY, "Gravity")
+        }
     }
 
     rl.DrawFPS(rl.GetScreenWidth() - 80, 0)
