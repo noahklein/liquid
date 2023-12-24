@@ -5,9 +5,10 @@ import "core:math/linalg"
 import "core:math/rand"
 import rl "vendor:raylib"
 import "../grid"
+import "../../ngui"
 
 // TODO: clean this up and make it gui editable.
-BOUND_SIZE :: 25 * grid.CELL_SIZE
+BOUND_SIZE :: 40 * grid.CELL_SIZE
 BOX := rl.Rectangle{
     -BOUND_SIZE / 2, -BOUND_SIZE / 2,
     BOUND_SIZE, BOUND_SIZE,
@@ -22,15 +23,15 @@ stats : struct{ update, fixed, neighbors, neighbor_count: int }
 // Gui properties.
 smoothing_radius: f32 = 2 * grid.CELL_SIZE
 collision_damp  : f32 = 0.9
-target_density  : f32 = 2.75
+target_density  : f32 = 12
 pressure_mult   : f32 = grid.CELL_SIZE / 2
 
 FIXED_DT :: 1.0 / 120.0
 dt_acc: f32
 
-GRAVITY :: 6 * grid.CELL_SIZE
+GRAVITY :: 2 * grid.CELL_SIZE
 // GRAVITY :: 0
-RADIUS  :: grid.CELL_SIZE / 8
+RADIUS  ::  grid.CELL_SIZE / 3
 
 Particle :: struct {
     pos, vel: rl.Vector2,
@@ -70,7 +71,11 @@ draw2D :: proc() {
     rl.DrawRectangleRec(BOX, rl.BLACK)
 
     for particle in particles {
-        color := rl.BLUE
+        // color := rl.BLUE
+        speed := linalg.length(particle.vel)
+        MAX_SPEED :: 20 * grid.CELL_SIZE
+        // color := rl.ColorFromHSV(182, speed / MAX_SPEED, 1)
+        color := ngui.lerp_color(rl.BLUE, {50, 255, 255, 255}, speed / MAX_SPEED)
         rl.DrawCircleV(particle.pos, RADIUS, color)
     }
 }
@@ -129,12 +134,14 @@ fixed_update :: proc(dt: f32) {
 }
 
 calc_density :: proc(sample_point: rl.Vector2) -> (density: f32) {
-    for pidx in particles_near_point(sample_point, smoothing_radius) {
+    neighbors := particles_near_point(sample_point, smoothing_radius)
+    for pidx in neighbors {
         dist := linalg.length(prediced_pos[pidx] - sample_point)
         influence := smoothing_kernel(smoothing_radius, dist)
         density += influence
     }
-    return
+
+    return max(density, 1e-7) // Avoid zero density, leads to NaN nonsense.
 }
 
 calc_pressure_force :: proc(particle_index: int) -> (force: rl.Vector2) {
