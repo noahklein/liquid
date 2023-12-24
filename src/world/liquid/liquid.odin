@@ -80,15 +80,21 @@ draw2D :: proc() {
     }
 }
 
-update :: proc(dt: f32) {
+update :: proc(dt: f32, box_target: rl.Vector2) {
     dt_acc += dt
     for dt_acc >= FIXED_DT {
         dt_acc -= FIXED_DT
-        fixed_update(FIXED_DT)
+        fixed_update(FIXED_DT, box_target)
     }
 }
 
-fixed_update :: proc(dt: f32) {
+fixed_update :: proc(dt: f32, box_target: rl.Vector2) {
+    // Update box position.
+    if box_target != 0 && linalg.distance(box_target, rl.Vector2{BOX.x, BOX.y}) > grid.CELL_SIZE {
+        BOX.x = linalg.lerp(BOX.x, box_target.x, dt)
+        BOX.y = linalg.lerp(BOX.y, box_target.y, dt)
+    }
+
     for &p, i in particles {
         p.vel += GRAVITY * dt
         predicted_pos[i] = p.pos + p.vel * dt

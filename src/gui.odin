@@ -26,7 +26,7 @@ gui_drag :: proc(cursor: rl.Vector2) {
 
     if rl.IsMouseButtonPressed(.RIGHT) {
         gui.dragging = false
-        return
+        return // What a drag, I'm outta here
     }
 
     // The grid square the mouse hovered when dragging started. Pick the corner based on drag direction.
@@ -98,10 +98,10 @@ gui_draw :: proc() {
             }
         }
         if ngui.flex_row({0.25, 0.25, 0.25, 0.25}) {
+            ngui.float(&liquid.collision_damp,   min = 0.1, max = 1, step = 0.01, label = "Collision Damp")
             ngui.float(&liquid.smoothing_radius, min = 0.1, max = 100, label = "Smoothing Radius")
-            ngui.float(&liquid.collision_damp, min = 0.1, max = 1, step = 0.01, label = "Collision Damping")
-            ngui.float(&liquid.target_density, min = 1, max = 200, label = "Target Density")
-            ngui.float(&liquid.pressure_mult, min = 0.1, max = 500, label = "Pressure Mult")
+            ngui.float(&liquid.target_density,   min = 1,   max = 200, label = "Target Density")
+            ngui.float(&liquid.pressure_mult,    min = 0.1, max = 500, label = "Pressure Mult")
         }
         if ngui.flex_row({0.4, 0.3, 0.3}) {
             if ngui.button("Stop all particles") {
@@ -111,16 +111,12 @@ gui_draw :: proc() {
             }
 
             SPAWN_STEP :: 16
-            if ngui.button("Less") {
-                liquid.create(len(liquid.particles) - SPAWN_STEP)
-            }
-            if ngui.button("More") {
-                liquid.create(len(liquid.particles) + SPAWN_STEP)
-            }
+            if ngui.button("Less") do liquid.create(len(liquid.particles) - SPAWN_STEP)
+            if ngui.button("More") do liquid.create(len(liquid.particles) + SPAWN_STEP)
         }
 
-        if ngui.flex_row({0.3}) {
-            ngui.arrow(&liquid.GRAVITY, "Gravity")
+        if ngui.flex_row({0.25}) {
+            ngui.arrow(&liquid.GRAVITY, "Gravity",  max_mag = 600)
         }
     }
 

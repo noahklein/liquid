@@ -61,7 +61,13 @@ update :: proc() {
     assert(len(state.text_inputs) <= 32, "Using more than 32 text inputs, is this intentional?")
 }
 
+slider :: proc(val: ^f32, $low, $high: f32) {
+    rect := flex_rect()
+    slider_rect(rect, val, low, high)
+}
+
 slider_rect :: proc(rect: rl.Rectangle, val: ^f32, $low, $high: f32) {
+    // @TODO: take a label.
     #assert(low < high)
     pct := val^ / (high - low)
 
@@ -86,11 +92,6 @@ slider_rect :: proc(rect: rl.Rectangle, val: ^f32, $low, $high: f32) {
 
     rl.DrawRectangleRec({rect.x, rect.y, rect.width, rect.height}, dark_color(is_hover, is_active))
     rl.DrawRectangleRec(slider_rect, button_color(is_hover, is_active))
-}
-
-slider :: proc(val: ^f32, $low, $high: f32) {
-    rect := flex_rect()
-    slider_rect(rect, val, low, high)
 }
 
 button :: proc(label: cstring) -> bool {
@@ -231,13 +232,13 @@ toggle_rect :: proc(rect: rl.Rectangle, label: cstring, selected: bool) -> bool 
     return press
 }
 
-arrow :: proc(vec: ^rl.Vector2, label: cstring) {
+arrow :: proc(vec: ^rl.Vector2, label: cstring, max_mag := INF) {
     rect := flex_rect()
-    arrow_rect(rect, vec, label)
+    arrow_rect(rect, vec, label, max_mag)
 }
 
 // An alternative vector edit component for direction and magnitude. Mostly used for gravity.
-arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring) {
+arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring, max_mag := INF) {
     arrow_rect := rect
     arrow_rect.width = rect.height
     center := rl.Vector2{arrow_rect.x + arrow_rect.width / 2, arrow_rect.y + arrow_rect.height / 2}
@@ -277,7 +278,7 @@ arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring) {
     magnitude_rect.width = rect.width - arrow_rect.width
 
     magnitude := linalg.length(vec^)
-    float_rect(magnitude_rect, &magnitude, min = 0, label = label)
+    float_rect(magnitude_rect, &magnitude, min = 0, max = max_mag, label = label)
     vec^ = direction * magnitude
 }
 

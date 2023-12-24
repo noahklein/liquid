@@ -73,7 +73,7 @@ main :: proc() {
 
         dt := rl.GetFrameTime() * timescale
         world.liquid_update(dt)
-        liquid.update(dt)
+        liquid.update(dt, liquid_box_target)
         player.update(dt)
 
         if linalg.distance(camera.target, player.pos) > 3 * grid.CELL_SIZE {
@@ -82,10 +82,6 @@ main :: proc() {
 
         if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
             liquid_box_target = rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-        }
-        if liquid_box_target != 0 && linalg.distance(liquid_box_target, rl.Vector2{liquid.BOX.x, liquid.BOX.y}) > grid.CELL_SIZE {
-            liquid.BOX.x = linalg.lerp(liquid.BOX.x, liquid_box_target.x, dt)
-            liquid.BOX.y = linalg.lerp(liquid.BOX.y, liquid_box_target.y, dt)
         }
 
         rl.BeginDrawing()
