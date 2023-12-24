@@ -68,6 +68,7 @@ lerp_color :: proc(ac, bc: rl.Color, t: f32) -> rl.Color {
     b := linalg.array_cast(bc, f32)
 
     v := linalg.lerp(a, b, t)
+    v = linalg.clamp(v, a, b)
 
     return rl.Color(linalg.array_cast(v, u8))
 }

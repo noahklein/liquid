@@ -264,7 +264,11 @@ arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring) {
     }
 
     rl.DrawRectangleRec(arrow_rect, dark_color(hover, active))
-    end := center + linalg.normalize(vec^) * arrow_rect.height / 4
+    rl.DrawLineV({center.x, arrow_rect.y + 1}, {center.x, arrow_rect.y + arrow_rect.height}, ACTIVE_BUTTON_COLOR) // vertical
+    rl.DrawLineV({arrow_rect.x, center.y}, {arrow_rect.x + arrow_rect.width, center.y}, ACTIVE_BUTTON_COLOR) // horizontal
+
+    direction := linalg.normalize(vec^) if linalg.length(vec^) != 0 else {0, 1}
+    end := center + direction * arrow_rect.height / 5
     draw_arrow(center, end, 3, TEXT_COLOR)
 
     // Magnitude is a float editor. Changing magnitude, maintains direction.
@@ -273,14 +277,8 @@ arrow_rect :: proc(rect: rl.Rectangle, vec: ^rl.Vector2, label: cstring) {
     magnitude_rect.width = rect.width - arrow_rect.width
 
     magnitude := linalg.length(vec^)
-    magnitude_prime := magnitude // copy
-    float_rect(magnitude_rect, &magnitude_prime, min = 0, label = label)
-
-    if magnitude == 0 {
-        vec^ = magnitude_prime // normalize() would divide by zero.
-    } else {
-        vec^ = linalg.normalize(vec^) * magnitude_prime
-    }
+    float_rect(magnitude_rect, &magnitude, min = 0, label = label)
+    vec^ = direction * magnitude
 }
 
 draw_arrow :: proc(start, end: rl.Vector2, thickness: f32, color: rl.Color) {

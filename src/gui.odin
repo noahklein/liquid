@@ -91,9 +91,7 @@ gui_draw :: proc() {
             ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
         }
 
-        if ngui.flex_row({0.25, 0.25, 0.25, 0.25}) {
-            ngui.text("Update: %d", liquid.stats.update)
-            ngui.text("Fixed: %d", liquid.stats.fixed)
+        if ngui.flex_row({0.25, 0.25}) {
             ngui.text("Particles: %d", len(liquid.particles))
             if liquid.stats.neighbor_count != 0 {
                 ngui.text("Avg Neighbors: %d", liquid.stats.neighbors / liquid.stats.neighbor_count)

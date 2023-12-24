@@ -22,7 +22,7 @@ _particles_in_range: [dynamic]int // Cleared every time particles_near_point() i
 
 UNKNOWN :: 0xFFFF_FFFF
 
-// Builds the fast grid lookup tables.
+// Builds the fast grid lookup tables. O(N*log(N)) sorting.
 update_grid_lookup :: proc(points: []rl.Vector2, radius: f32) {
     clear(&grid_lookup)
     clear(&start_index)

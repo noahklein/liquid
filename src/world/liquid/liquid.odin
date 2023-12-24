@@ -15,10 +15,10 @@ BOX := rl.Rectangle{
 }
 
 particles   : [dynamic]Particle
-prediced_pos: [dynamic]rl.Vector2 // Parallel with particles, the naive projected position
+predicted_pos: [dynamic]rl.Vector2 // Parallel with particles, the naive projected position
                                   // of a particle. Greatly improves simulation stability.
 
-stats : struct{ update, fixed, neighbors, neighbor_count: int }
+stats : struct{ neighbors, neighbor_count: int }
 
 // Gui properties.
 smoothing_radius: f32 = 2 * grid.CELL_SIZE
@@ -43,7 +43,7 @@ init :: proc(size: int) {
     reserve(&grid_lookup, size)
     reserve(&start_index, size)
     reserve(&_particles_in_range, size)
-    resize(&prediced_pos, size)
+    resize(&predicted_pos, size)
 }
 
 deinit :: proc() {
@@ -51,7 +51,7 @@ deinit :: proc() {
     delete(grid_lookup)
     delete(start_index)
     delete(_particles_in_range)
-    delete(prediced_pos)
+    delete(predicted_pos)
  }
 
 create :: proc(quantity: int) {
@@ -75,14 +75,12 @@ draw2D :: proc() {
         speed := linalg.length(particle.vel)
         MAX_SPEED :: 20 * grid.CELL_SIZE
         // color := rl.ColorFromHSV(182, speed / MAX_SPEED, 1)
-        color := ngui.lerp_color(rl.BLUE, {50, 255, 255, 255}, speed / MAX_SPEED)
+        color := ngui.lerp_color(rl.BLUE, {0, 255, 255, 255}, speed / MAX_SPEED)
         rl.DrawCircleV(particle.pos, RADIUS, color)
     }
 }
 
 update :: proc(dt: f32) {
-    stats.update += 1
-
     dt_acc += dt
     for dt_acc >= FIXED_DT {
         dt_acc -= FIXED_DT
@@ -91,14 +89,12 @@ update :: proc(dt: f32) {
 }
 
 fixed_update :: proc(dt: f32) {
-    stats.fixed += 1
-
     for &p, i in particles {
         p.vel += GRAVITY * dt
-        prediced_pos[i] = p.pos + p.vel * dt
+        predicted_pos[i] = p.pos + p.vel * dt
     }
 
-    update_grid_lookup(prediced_pos[:], smoothing_radius)
+    update_grid_lookup(predicted_pos[:], smoothing_radius)
 
     for &p in particles {
         p.density = calc_density(p.pos)
@@ -136,7 +132,7 @@ fixed_update :: proc(dt: f32) {
 calc_density :: proc(sample_point: rl.Vector2) -> (density: f32) {
     neighbors := particles_near_point(sample_point, smoothing_radius)
     for pidx in neighbors {
-        dist := linalg.length(prediced_pos[pidx] - sample_point)
+        dist := linalg.length(predicted_pos[pidx] - sample_point)
         influence := smoothing_kernel(smoothing_radius, dist)
         density += influence
     }
@@ -152,7 +148,7 @@ calc_pressure_force :: proc(particle_index: int) -> (force: rl.Vector2) {
     stats.neighbor_count += 1
 
     for pidx in neighbors do if pidx != particle_index {
-        diff := prediced_pos[pidx] - prediced_pos[particle_index]
+        diff := predicted_pos[pidx] - predicted_pos[particle_index]
         dist := linalg.length(diff)
         dir := (diff) / dist if dist != 0 else rand_direction()
         slope := smoothing_kernel_derivative(smoothing_radius, dist)
