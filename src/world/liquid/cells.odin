@@ -17,23 +17,18 @@ CellParticle :: struct {
 start_index: [dynamic]int
 
 @(private)
-_particles_in_range: [dynamic]ParticleIndex // Cleared every time particles_near_point() is called.
-                                            // For internal use only.
-
-ParticleIndex :: struct {
-    using particle: Particle,
-    index: int,
-}
+_particles_in_range: [dynamic]int // Cleared every time particles_near_point() is called.
+                                  // For internal use only.
 
 UNKNOWN :: 0xFFFF_FFFF
 
 // Builds the fast grid lookup tables.
-update_grid_lookup :: proc(radius: f32) {
+update_grid_lookup :: proc(points: []rl.Vector2, radius: f32) {
     clear(&grid_lookup)
     clear(&start_index)
 
-    for p, i in particles {
-        cell := pos_to_cell(p.pos, radius)
+    for pos, i in points {
+        cell := pos_to_cell(pos, radius)
         key := hash_to_key(hash_cell(cell))
 
         append(&grid_lookup, CellParticle{ particle_index = i, cell_key = key})
@@ -58,7 +53,7 @@ update_grid_lookup :: proc(radius: f32) {
 // Returns a list of particles in the 9 grid cells surrounding a point. Used to calculate
 // density and pressure. This is a massive optimization over the naive O(N^2) approach.
 // In practice this means reducing the list to <10 neighbors per particle.
-particles_near_point :: proc(sample_point: rl.Vector2, radius: f32) -> []ParticleIndex {
+particles_near_point :: proc(sample_point: rl.Vector2, radius: f32) -> []int {
     center := pos_to_cell(sample_point, radius)
 
     sqr_radius := radius * radius
@@ -81,8 +76,8 @@ particles_near_point :: proc(sample_point: rl.Vector2, radius: f32) -> []Particl
             diff := particle.pos - sample_point
             sqr_dist := linalg.dot(diff, diff)
             if sqr_dist < sqr_radius {
-                pidx := ParticleIndex{ particle, cp.particle_index }
-                append(&_particles_in_range, pidx)
+                // pidx := ParticleIndex{ particle, cp.particle_index }
+                append(&_particles_in_range, cp.particle_index)
             }
         }
     }

@@ -7,13 +7,16 @@ import rl "vendor:raylib"
 import "../grid"
 
 // TODO: clean this up and make it gui editable.
-BOUND_SIZE :: 50 * grid.CELL_SIZE
+BOUND_SIZE :: 25 * grid.CELL_SIZE
 BOX := rl.Rectangle{
     -BOUND_SIZE / 2, -BOUND_SIZE / 2,
     BOUND_SIZE, BOUND_SIZE,
 }
 
-particles  : [dynamic]Particle
+particles   : [dynamic]Particle
+prediced_pos: [dynamic]rl.Vector2 // Parallel with particles, the naive projected position
+                                  // of a particle. Greatly improves simulation stability.
+
 stats : struct{ update, fixed, neighbors, neighbor_count: int }
 
 // Gui properties.
@@ -25,7 +28,7 @@ pressure_mult   : f32 = grid.CELL_SIZE / 2
 FIXED_DT :: 1.0 / 120.0
 dt_acc: f32
 
-GRAVITY :: 10 * grid.CELL_SIZE
+GRAVITY :: 6 * grid.CELL_SIZE
 // GRAVITY :: 0
 RADIUS  :: grid.CELL_SIZE / 8
 
@@ -39,6 +42,7 @@ init :: proc(size: int) {
     reserve(&grid_lookup, size)
     reserve(&start_index, size)
     reserve(&_particles_in_range, size)
+    resize(&prediced_pos, size)
 }
 
 deinit :: proc() {
@@ -46,7 +50,21 @@ deinit :: proc() {
     delete(grid_lookup)
     delete(start_index)
     delete(_particles_in_range)
+    delete(prediced_pos)
  }
+
+create :: proc(quantity: int) {
+    init(quantity)
+    clear(&particles)
+
+    for _ in 0..<quantity {
+        pos := rl.Vector2{
+            BOX.x + rand.float32() * (BOX.width),
+            BOX.y + rand.float32() * (BOX.height),
+        }
+        append(&particles, Particle{ pos = pos })
+    }
+}
 
 draw2D :: proc() {
     rl.DrawRectangleRec(BOX, rl.BLACK)
@@ -70,10 +88,14 @@ update :: proc(dt: f32) {
 fixed_update :: proc(dt: f32) {
     stats.fixed += 1
 
-    update_grid_lookup(smoothing_radius)
+    for &p, i in particles {
+        p.vel.y += GRAVITY * dt
+        prediced_pos[i] = p.pos + p.vel * dt
+    }
+
+    update_grid_lookup(prediced_pos[:], smoothing_radius)
 
     for &p in particles {
-        p.vel.y += GRAVITY * dt
         p.density = calc_density(p.pos)
     }
 
@@ -83,7 +105,7 @@ fixed_update :: proc(dt: f32) {
     }
 
 
-    // TODO: precalculate these
+    // @TODO: precalculate these
     bmin := rl.Vector2{BOX.x + RADIUS, BOX.y + RADIUS}
     bmax := rl.Vector2{BOX.x + BOX.width - RADIUS, BOX.y + BOX.height - RADIUS}
     for &p in particles {
@@ -106,23 +128,9 @@ fixed_update :: proc(dt: f32) {
     }
 }
 
-create :: proc(quantity: int) {
-    init(quantity)
-    clear(&particles)
-
-    for _ in 0..<quantity {
-        pos := rl.Vector2{
-            BOX.x + rand.float32() * (BOX.width),
-            BOX.y + rand.float32() * (BOX.height),
-        }
-        append(&particles, Particle{ pos = pos })
-    }
-}
-
 calc_density :: proc(sample_point: rl.Vector2) -> (density: f32) {
-    for particle in particles_near_point(sample_point, smoothing_radius) {
-    // for particle in particles {
-        dist := linalg.length(particle.pos - sample_point)
+    for pidx in particles_near_point(sample_point, smoothing_radius) {
+        dist := linalg.length(prediced_pos[pidx] - sample_point)
         influence := smoothing_kernel(smoothing_radius, dist)
         density += influence
     }
@@ -136,14 +144,15 @@ calc_pressure_force :: proc(particle_index: int) -> (force: rl.Vector2) {
     stats.neighbors += len(neighbors)
     stats.neighbor_count += 1
 
-    for p in neighbors do if p.index != particle_index {
-    // for p, i in particles do if i != particle_index {
-        dist := linalg.length(p.pos - other_p.pos)
-        dir := (p.pos - other_p.pos) / dist if dist != 0 else rand_direction()
+    for pidx in neighbors do if pidx != particle_index {
+        diff := prediced_pos[pidx] - prediced_pos[particle_index]
+        dist := linalg.length(diff)
+        dir := (diff) / dist if dist != 0 else rand_direction()
         slope := smoothing_kernel_derivative(smoothing_radius, dist)
 
-        avg_pressure := (density_to_presure(p.density) + density_to_presure(other_p.density)) / 2
-        force += -avg_pressure * dir * slope / p.density
+        density := particles[pidx].density
+        avg_pressure := (density_to_presure(density) + density_to_presure(other_p.density)) / 2
+        force += -avg_pressure * dir * slope / density
     }
 
     return
