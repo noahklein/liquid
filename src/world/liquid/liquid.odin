@@ -91,8 +91,8 @@ update :: proc(dt: f32, box_target: rl.Vector2) {
 fixed_update :: proc(dt: f32, box_target: rl.Vector2) {
     // Update box position.
     if box_target != 0 && linalg.distance(box_target, rl.Vector2{BOX.x, BOX.y}) > grid.CELL_SIZE {
-        BOX.x = linalg.lerp(BOX.x, box_target.x, dt)
-        BOX.y = linalg.lerp(BOX.y, box_target.y, dt)
+        BOX.x = linalg.lerp(BOX.x, box_target.x, dt / 2)
+        BOX.y = linalg.lerp(BOX.y, box_target.y, dt / 2)
     }
 
     for &p, i in particles {

@@ -30,8 +30,6 @@ NGui :: struct {
 }
 
 init :: proc() {
-    reserve(&state.panels, 16)
-    reserve(&state.text_inputs, 16)
 }
 
 deinit :: proc() {

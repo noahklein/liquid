@@ -71,14 +71,21 @@ main :: proc() {
     for !rl.WindowShouldClose() {
         defer free_all(context.temp_allocator)
 
-        dt := rl.GetFrameTime() * timescale
+        dt := min(rl.GetFrameTime() * timescale, 0.3)
+
         world.liquid_update(dt)
         liquid.update(dt, liquid_box_target)
         player.update(dt)
 
-        if linalg.distance(camera.target, player.pos) > 3 * grid.CELL_SIZE {
-            camera.target += (player.pos - camera.target) * rl.GetFrameTime() // Unaffected by timescale
+        camera_follow :: proc(target: rl.Vector2) {
+            if linalg.distance(camera.target, target) > 3 * grid.CELL_SIZE {
+                camera.target += (target - camera.target) * rl.GetFrameTime() // Unaffected by timescale
+            }
         }
+        camera_follow({
+            liquid.BOX.x + liquid.BOX.width  / 2,
+            liquid.BOX.y + liquid.BOX.height / 2,
+        })
 
         if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
             liquid_box_target = rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
