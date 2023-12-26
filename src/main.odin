@@ -95,10 +95,9 @@ main :: proc() {
             liquid.BOX.y + liquid.BOX.height / 2,
         })
 
-
         rl.BeginDrawing()
         defer rl.EndDrawing()
-        rl.ClearBackground(rl.LIGHTGRAY - 5 * {10, 0, 10, 0})
+        rl.ClearBackground(rl.LIGHTGRAY - 10 * {10, 10, 10, 0})
 
         rl.BeginMode2D(camera)
             player.draw2D()

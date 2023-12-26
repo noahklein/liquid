@@ -152,6 +152,7 @@ liquid_fixed_update :: proc(dt: f32) {
     for &tank in tanks {
         tank.vel.y += TANK_GRAVITY * dt // TODO: mass
         tank.vel = check_collision(dt, {tank.pos.x, tank.pos.y, tank.size.x, tank.size.y}, tank.vel)
+        tank.vel *= 0.999
         tank.pos += tank.vel * dt
     }
 }
@@ -160,8 +161,11 @@ broad_hits : [dynamic]BroadHit
 
 BroadHit :: struct {
     time: f32,
-    wall_index: int,
+    index: int,
+    type: ObstacleType,
 }
+
+ObstacleType :: enum u8 { Wall, Tank }
 
 // Player collision detection and resolution. Called for player and tanks.
 check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl.Vector2 {
@@ -171,7 +175,25 @@ check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl
         contact := dyn_rect_vs_rect(rect, wall.rec, velocity, dt) or_continue
         append(&broad_hits, BroadHit{
             time = contact.time,
-            wall_index = i,
+            index = i,
+            type = .Wall,
+        })
+    }
+
+    relative_velocity :: proc(a, b: rl.Vector2) -> rl.Vector2 {
+        return a
+    }
+
+    for tank, i in tanks {
+        if tank.pos.x == rect.x && tank.pos.y == rect.y {
+            continue // @HACK: avoid tank colliding with itself.
+        }
+        tank_rect := rl.Rectangle{ tank.pos.x, tank.pos.y, tank.size.x, tank.size.y }
+        contact := dyn_rect_vs_rect(rect, tank_rect, relative_velocity(velocity, tank.vel) , dt) or_continue
+        append(&broad_hits, BroadHit{
+            time = contact.time,
+            index = i,
+            type = .Tank,
         })
     }
 
@@ -187,9 +209,21 @@ check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl
     // Narrow-phase: check sorted collisions and resolve them in order.
     new_vel := velocity
     for hit in broad_hits {
-        wall := walls[hit.wall_index]
-        contact := dyn_rect_vs_rect(rect, wall.rec, new_vel, dt) or_continue
-        new_vel += contact.normal * linalg.abs(new_vel) * (1 - contact.time)
+        switch hit.type {
+        case .Wall:
+            wall := walls[hit.index]
+            contact := dyn_rect_vs_rect(rect, wall.rec, new_vel, dt) or_continue
+            new_vel += contact.normal * linalg.abs(new_vel) * (1 - contact.time)
+        case .Tank:
+            t := tanks[hit.index]
+            tank_rect := rl.Rectangle{t.pos.x, t.pos.y, t.size.x, t.size.y}
+            rel_vel := relative_velocity(new_vel, t.vel)
+            contact := dyn_rect_vs_rect(rect, tank_rect, rel_vel, dt) or_continue
+            delta_v := contact.normal * linalg.abs(rel_vel) * (1 - contact.time)
+            new_vel += delta_v / 2
+            tanks[hit.index].vel -= delta_v / 2
+        }
+
     }
     return new_vel
 }
