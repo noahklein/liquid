@@ -87,16 +87,14 @@ main :: proc() {
                 camera.target += (target - camera.target) * rl.GetFrameTime() // Unaffected by timescale
             }
         }
+
+        liquid.BOX.x = world.tanks[0].pos.x
+        liquid.BOX.y = world.tanks[0].pos.y
         camera_follow({
             liquid.BOX.x + liquid.BOX.width  / 2,
             liquid.BOX.y + liquid.BOX.height / 2,
         })
-        // tank := player.get_tank_rect(player.get_rect())
-        liquid_box_target = world.tanks[0].pos
-        // if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
-            // liquid.interaction_force(cursor)
-            // liquid_box_target = rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-        // }
+
 
         rl.BeginDrawing()
         defer rl.EndDrawing()

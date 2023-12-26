@@ -1,5 +1,6 @@
 package world
 
+import "core:fmt"
 import "core:math"
 import "core:math/linalg"
 import "core:math/rand"
@@ -71,6 +72,21 @@ Tank :: struct {
     pos, size, vel: rl.Vector2,
 }
 
+draw2D :: proc() {
+    for wall in walls {
+        rl.DrawRectangleRec(wall.rec, wall.color)
+    }
+
+    for particle in liquid {
+        rl.DrawCircleV(particle.center, LIQUID_RADIUS, particle.color)
+    }
+
+    when ODIN_DEBUG do for emitter in emitters {
+        EMITTER_SIZE :: rl.Vector2{10, 10}
+        rl.DrawRectangleV(emitter.pos - EMITTER_SIZE, EMITTER_SIZE, {0, 200, 0, 150})
+    }
+}
+
 liquid_update :: proc(dt: f32) {
     dt_acc += dt
     for dt_acc >= FIXED_DT {
@@ -135,6 +151,7 @@ liquid_fixed_update :: proc(dt: f32) {
 
     for &tank in tanks {
         tank.vel.y += TANK_GRAVITY * dt // TODO: mass
+        tank.vel = check_collision(dt, {tank.pos.x, tank.pos.y, tank.size.x, tank.size.y}, tank.vel)
         tank.pos += tank.vel * dt
     }
 }
@@ -146,7 +163,7 @@ BroadHit :: struct {
     wall_index: int,
 }
 
-// Player collision detection and resolution. Called for player and tank.
+// Player collision detection and resolution. Called for player and tanks.
 check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl.Vector2 {
     // Broad-phase, get a list of all collision objects.
     clear(&broad_hits)
@@ -175,21 +192,6 @@ check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl
         new_vel += contact.normal * linalg.abs(new_vel) * (1 - contact.time)
     }
     return new_vel
-}
-
-draw2D :: proc() {
-    for wall in walls {
-        rl.DrawRectangleRec(wall.rec, wall.color)
-    }
-
-    for particle in liquid {
-        rl.DrawCircleV(particle.center, LIQUID_RADIUS, particle.color)
-    }
-
-    when ODIN_DEBUG do for emitter in emitters {
-        EMITTER_SIZE :: rl.Vector2{10, 10}
-        rl.DrawRectangleV(emitter.pos - EMITTER_SIZE, EMITTER_SIZE, {0, 200, 0, 150})
-    }
 }
 
 Contact :: struct {
