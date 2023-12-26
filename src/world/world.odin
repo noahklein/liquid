@@ -8,7 +8,7 @@ import "core:slice"
 import rl "vendor:raylib"
 
 import "grid"
-import liquid_sim "liquid"
+// import liquid_sim "liquid"
 import "../ngui"
 
 FIXED_DT :: 1.0 / 120.0
@@ -134,7 +134,7 @@ liquid_fixed_update :: proc(dt: f32) {
     }
 
     for &tank in tanks {
-        tank.vel += TANK_GRAVITY * dt // TODO: mass
+        tank.vel.y += TANK_GRAVITY * dt // TODO: mass
         tank.pos += tank.vel * dt
     }
 }

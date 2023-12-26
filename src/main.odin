@@ -47,6 +47,7 @@ main :: proc() {
     camera = rl.Camera2D{ zoom = 1, offset = screen_size() / 2 }
     world.init()
     defer world.deinit()
+    append(&world.tanks, world.Tank{ pos = rl.Vector2{8, 4} * grid.CELL_SIZE, size = 3 * grid.CELL_SIZE })
 
     // Spawn liquid emitter for testing.
     // append(&world.emitters, world.LiquidEmitter{
@@ -54,14 +55,12 @@ main :: proc() {
     // })
 
     // liquid.BOX = player.get_tank_rect(player.get_rect())
-    player.pos = {5, 5} * grid.CELL_SIZE
+    player.pos = {3, 5} * grid.CELL_SIZE
 
     {
         // Init tank position.
-        rect := player.get_tank_rect(player.get_rect())
-        liquid.BOX.x = rect.x
-        liquid.BOX.y = rect.y
-        liquid.BOX = rect
+        tank := world.tanks[0]
+        liquid.BOX = {tank.pos.x, tank.pos.y, tank.size.x, tank.size.y}
     }
 
     liquid.create(100)
@@ -92,8 +91,8 @@ main :: proc() {
             liquid.BOX.x + liquid.BOX.width  / 2,
             liquid.BOX.y + liquid.BOX.height / 2,
         })
-        tank := player.get_tank_rect(player.get_rect())
-        liquid_box_target = {tank.x, tank.y}
+        // tank := player.get_tank_rect(player.get_rect())
+        liquid_box_target = world.tanks[0].pos
         // if !ngui.want_mouse() && rl.IsMouseButtonPressed(.LEFT) {
             // liquid.interaction_force(cursor)
             // liquid_box_target = rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
