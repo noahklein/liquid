@@ -1,11 +1,14 @@
 package world
 
-import "core:fmt"
 import "core:math"
 import "core:math/linalg"
-import rl "vendor:raylib"
-import "grid"
 import "core:math/rand"
+import "core:slice"
+
+import rl "vendor:raylib"
+
+import "grid"
+import liquid_sim "liquid"
 import "../ngui"
 
 FIXED_DT :: 1.0 / 120.0
@@ -17,8 +20,11 @@ LIQUID_GRAVITY  :: 5 * grid.CELL_SIZE
 MAX_PARTICLE_SPEED :: 10 * grid.CELL_SIZE
 EMITTER_FIRE_SECONDS :: 0.1
 
+TANK_GRAVITY :: 5 * grid.CELL_SIZE
+
 walls:  [dynamic]Wall
 liquid: [dynamic]LiquidParticle
+tanks:  [dynamic]Tank
 emitters: [dynamic]LiquidEmitter
 dt_acc: f32
 
@@ -27,6 +33,7 @@ init :: proc() {
     reserve(&liquid, 128)
     reserve(&emitters, 16)
     reserve(&walls, 1024)
+    reserve(&tanks, 1)
 
     for x in 0..<cap(walls) {
         WIDTH :: 3 * grid.CELL_SIZE
@@ -41,6 +48,8 @@ deinit :: proc() {
     delete(walls)
     delete(liquid)
     delete(emitters)
+    delete(tanks)
+    delete(broad_hits)
 }
 
 Wall :: struct{
@@ -50,12 +59,16 @@ Wall :: struct{
 
 LiquidEmitter :: struct {
     pos: rl.Vector2,
-    dt_acc: f32,
+    dt_acc: f32, // Fire rate in seconds.
 }
 
 LiquidParticle :: struct {
     center, vel: rl.Vector2,
     color: rl.Color,
+}
+
+Tank :: struct {
+    pos, size, vel: rl.Vector2,
 }
 
 liquid_update :: proc(dt: f32) {
@@ -75,7 +88,7 @@ liquid_fixed_update :: proc(dt: f32) {
                 center = emitter.pos,
                 vel = {(rand.float32() - 0.5) * grid.CELL_SIZE, LIQUID_GRAVITY},
                 color = {0, 0, u8(rand.float32() * 100) + 155, 255},
-             })
+            })
         }
     }
 
@@ -119,14 +132,49 @@ liquid_fixed_update :: proc(dt: f32) {
             }
         }
     }
+
+    for &tank in tanks {
+        tank.vel += TANK_GRAVITY * dt // TODO: mass
+        tank.pos += tank.vel * dt
+    }
 }
 
-check_collision :: proc(rec: rl.Rectangle) -> bool {
-    for wall in walls {
-        if rl.CheckCollisionRecs(rec, wall.rec) do return true
+broad_hits : [dynamic]BroadHit
+
+BroadHit :: struct {
+    time: f32,
+    wall_index: int,
+}
+
+// Player collision detection and resolution. Called for player and tank.
+check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl.Vector2 {
+    // Broad-phase, get a list of all collision objects.
+    clear(&broad_hits)
+    for wall, i in walls {
+        contact := dyn_rect_vs_rect(rect, wall.rec, velocity, dt) or_continue
+        append(&broad_hits, BroadHit{
+            time = contact.time,
+            wall_index = i,
+        })
     }
 
-    return false
+    if len(broad_hits) == 0 {
+        return velocity
+    }
+
+    // Sort the colliding rects by collision time: nearest first.
+    slice.sort_by_key(broad_hits[:], proc(bh: BroadHit) -> f32 {
+        return bh.time
+    })
+
+    // Narrow-phase: check sorted collisions and resolve them in order.
+    new_vel := velocity
+    for hit in broad_hits {
+        wall := walls[hit.wall_index]
+        contact := dyn_rect_vs_rect(rect, wall.rec, new_vel, dt) or_continue
+        new_vel += contact.normal * linalg.abs(new_vel) * (1 - contact.time)
+    }
+    return new_vel
 }
 
 draw2D :: proc() {

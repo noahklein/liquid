@@ -1,10 +1,8 @@
 package main
 
 import "core:fmt"
-import "core:math"
 import "core:math/linalg"
 import "core:mem"
-import "core:math/rand"
 
 import rl "vendor:raylib"
 
@@ -57,19 +55,17 @@ main :: proc() {
 
     // liquid.BOX = player.get_tank_rect(player.get_rect())
     player.pos = {5, 5} * grid.CELL_SIZE
-    defer delete(player.broad_hits)
 
     {
         // Init tank position.
         rect := player.get_tank_rect(player.get_rect())
         liquid.BOX.x = rect.x
         liquid.BOX.y = rect.y
+        liquid.BOX = rect
     }
 
-    liquid.create(3000)
+    liquid.create(100)
     defer liquid.deinit()
-
-
 
     when ODIN_DEBUG {
         ngui.init()

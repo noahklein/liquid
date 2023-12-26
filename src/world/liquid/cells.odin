@@ -1,6 +1,5 @@
 package liquid
 
-import "core:fmt"
 import "core:slice"
 import "core:math/linalg"
 import rl "vendor:raylib"
