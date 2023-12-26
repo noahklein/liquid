@@ -124,17 +124,8 @@ fixed_update :: proc(dt: f32) {
 }
 
 draw2D :: proc() {
-    // Player
     rect := get_rect()
     rl.DrawRectangleRec(rect, rl.BEIGE if !is_colliding else rl.RED)
-
-    // Tank
-    rect = get_tank_rect(rect)
-    rl.DrawRectangleRec(rect, rl.BLUE)
-
-    // Liquid
-    rect.height = (1 - fullness) * SIZE.y
-    rl.DrawRectangleRec(rect, rl.BLACK)
 }
 
 broad_hits : [dynamic]BroadHit

@@ -60,9 +60,9 @@ gui_draw :: proc() {
         }
 
         rl.BeginMode2D(camera)
-            gui_drag(cursor)
+            // gui_drag(cursor)
             if !ngui.want_mouse() {
-                rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
+                // rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
                 // grid.draw(camera)
             }
         rl.EndMode2D()
@@ -115,8 +115,9 @@ gui_draw :: proc() {
             if ngui.button("More") do liquid.create(len(liquid.particles) + SPAWN_STEP)
         }
 
-        if ngui.flex_row({0.25}) {
+        if ngui.flex_row({0.25, 0.25}) {
             ngui.arrow(&liquid.GRAVITY, "Gravity",  max_mag = 600)
+            ngui.float(&liquid.interaction_strength, min = 100, max = 400, step = 1, label = "Mouse Force")
         }
     }
 

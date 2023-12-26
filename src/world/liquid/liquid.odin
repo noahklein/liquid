@@ -1,6 +1,5 @@
 package liquid
 
-import "core:fmt"
 import "core:math/linalg"
 import "core:math/rand"
 import rl "vendor:raylib"
@@ -8,30 +7,33 @@ import "../grid"
 import "../../ngui"
 
 // TODO: clean this up and make it gui editable.
-BOUND_SIZE :: 40 * grid.CELL_SIZE
+BOUND_SIZE :: 60 * grid.CELL_SIZE
 BOX := rl.Rectangle{
     -BOUND_SIZE / 2, -BOUND_SIZE / 2,
     BOUND_SIZE, BOUND_SIZE,
 }
 
-particles   : [dynamic]Particle
+particles    : [dynamic]Particle
 predicted_pos: [dynamic]rl.Vector2 // Parallel with particles, the naive projected position
-                                  // of a particle. Greatly improves simulation stability.
+                                   // of a particle. Greatly improves simulation stability.
 
 stats : struct{ neighbors, neighbor_count: int }
 
 // Gui properties.
-smoothing_radius: f32 = 2 * grid.CELL_SIZE
-collision_damp  : f32 = 0.6
+smoothing_radius: f32 = grid.CELL_SIZE / 2
+collision_damp  : f32 = 0.3
 target_density  : f32 = 12
-pressure_mult   : f32 = grid.CELL_SIZE / 2
+pressure_mult   : f32 = grid.CELL_SIZE
+
+interaction_strength: f32 = 250
 
 FIXED_DT :: 1.0 / 120.0
 dt_acc: f32
 
-GRAVITY := rl.Vector2{0, 2 * grid.CELL_SIZE}
+GRAVITY := rl.Vector2{0, grid.CELL_SIZE}
 // GRAVITY :: 0
-RADIUS  ::  grid.CELL_SIZE / 3
+RADIUS  ::  grid.CELL_SIZE / 8
+MAX_SPEED :: 25 * grid.CELL_SIZE
 
 Particle :: struct {
     pos, vel: rl.Vector2,
@@ -73,26 +75,25 @@ draw2D :: proc() {
     for particle in particles {
         // color := rl.BLUE
         speed := linalg.length(particle.vel)
-        MAX_SPEED :: 20 * grid.CELL_SIZE
         // color := rl.ColorFromHSV(182, speed / MAX_SPEED, 1)
-        color := ngui.lerp_color(rl.BLUE, {0, 255, 255, 255}, speed / MAX_SPEED)
+        color := ngui.lerp_color(rl.BLUE, rl.WHITE, speed / MAX_SPEED)
         rl.DrawCircleV(particle.pos, RADIUS, color)
     }
 }
 
-update :: proc(dt: f32, box_target: rl.Vector2) {
+update :: proc(dt: f32, box_target, cursor: rl.Vector2) {
     dt_acc += dt
     for dt_acc >= FIXED_DT {
         dt_acc -= FIXED_DT
-        fixed_update(FIXED_DT, box_target)
+        fixed_update(FIXED_DT, box_target, cursor)
     }
 }
 
-fixed_update :: proc(dt: f32, box_target: rl.Vector2) {
+fixed_update :: proc(dt: f32, box_target, cursor: rl.Vector2) {
     // Update box position.
     if box_target != 0 && linalg.distance(box_target, rl.Vector2{BOX.x, BOX.y}) > grid.CELL_SIZE {
-        BOX.x = linalg.lerp(BOX.x, box_target.x, dt / 2)
-        BOX.y = linalg.lerp(BOX.y, box_target.y, dt / 2)
+        BOX.x = linalg.lerp(BOX.x, box_target.x, dt)
+        BOX.y = linalg.lerp(BOX.y, box_target.y, dt)
     }
 
     for &p, i in particles {
@@ -108,6 +109,12 @@ fixed_update :: proc(dt: f32, box_target: rl.Vector2) {
 
     for &p, i in particles {
         accel := calc_pressure_force(i) / p.density
+        if rl.IsMouseButtonDown(.LEFT) {
+            accel += calc_interaction_force(cursor, i, interaction_strength)
+        } else if rl.IsMouseButtonDown(.RIGHT) {
+            accel += calc_interaction_force(cursor, i, -interaction_strength)
+        }
+
         p.vel += accel * dt
     }
 
@@ -116,6 +123,7 @@ fixed_update :: proc(dt: f32, box_target: rl.Vector2) {
     bmin := rl.Vector2{BOX.x + RADIUS, BOX.y + RADIUS}
     bmax := rl.Vector2{BOX.x + BOX.width - RADIUS, BOX.y + BOX.height - RADIUS}
     for &p in particles {
+        p.vel = linalg.clamp(p.vel, -MAX_SPEED, MAX_SPEED)
         p.pos += p.vel * dt
         {
             // Keep in bounding-box.
@@ -131,7 +139,6 @@ fixed_update :: proc(dt: f32, box_target: rl.Vector2) {
             }
             p.pos = linalg.clamp(p.pos, bmin, bmax)
         }
-
     }
 }
 
@@ -165,6 +172,21 @@ calc_pressure_force :: proc(particle_index: int) -> (force: rl.Vector2) {
     }
 
     return
+}
+
+calc_interaction_force :: proc(point: rl.Vector2, particle_index: int, strength: f32) -> rl.Vector2 {
+    INTERACTION_RADIUS :: 6 * grid.CELL_SIZE
+
+    offset := point - particles[particle_index].pos
+    sqr_dist := linalg.dot(offset, offset)
+    if sqr_dist >= INTERACTION_RADIUS * INTERACTION_RADIUS {
+        return 0 // Too far, no impact.
+    }
+
+    dist := linalg.sqrt(sqr_dist)
+    dir := offset / dist if dist > linalg.F32_EPSILON else 0
+    center_t := 1 - dist / INTERACTION_RADIUS // 1 at point, 0 at radius edge.
+    return (dir * strength * grid.CELL_SIZE - particles[particle_index].vel) * center_t
 }
 
 smoothing_kernel :: proc(radius, dist: f32) -> f32 {
