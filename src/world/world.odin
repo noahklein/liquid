@@ -33,7 +33,7 @@ init :: proc() {
     // reserve(&walls, 128)
     reserve(&liquid, 128)
     reserve(&emitters, 16)
-    reserve(&walls, 1024)
+    reserve(&walls, 512)
     reserve(&tanks, 1)
 
     for x in 0..<cap(walls) {
