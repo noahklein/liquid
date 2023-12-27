@@ -47,7 +47,7 @@ main :: proc() {
     camera = rl.Camera2D{ zoom = 1, offset = screen_size() / 2 }
     world.init()
     defer world.deinit()
-    append(&world.tanks, world.Tank{ pos = rl.Vector2{8, 4} * grid.CELL_SIZE, size = 3 * grid.CELL_SIZE })
+    append(&world.tanks, world.Tank{ pos = rl.Vector2{11, 0} * grid.CELL_SIZE, size = 10 * grid.CELL_SIZE })
 
     // Spawn liquid emitter for testing.
     // append(&world.emitters, world.LiquidEmitter{

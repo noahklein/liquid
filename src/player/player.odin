@@ -93,7 +93,9 @@ fixed_update :: proc(dt: f32) {
     }
 
     player_rect := get_rect()
-    vel = world.check_collision(dt, player_rect, vel)
+    if vel != 0 {
+        vel = world.check_collision(dt, player_rect, vel)
+    }
     pos += vel * dt
 
     {

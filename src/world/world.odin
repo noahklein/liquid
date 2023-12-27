@@ -152,7 +152,6 @@ liquid_fixed_update :: proc(dt: f32) {
     for &tank in tanks {
         tank.vel.y += TANK_GRAVITY * dt // TODO: mass
         tank.vel = check_collision(dt, {tank.pos.x, tank.pos.y, tank.size.x, tank.size.y}, tank.vel)
-        tank.vel *= 0.999
         tank.pos += tank.vel * dt
     }
 }
@@ -181,7 +180,7 @@ check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl
     }
 
     relative_velocity :: proc(a, b: rl.Vector2) -> rl.Vector2 {
-        return a
+        return a - b
     }
 
     for tank, i in tanks {
@@ -220,10 +219,9 @@ check_collision :: proc(dt: f32, rect: rl.Rectangle, velocity: rl.Vector2) -> rl
             rel_vel := relative_velocity(new_vel, t.vel)
             contact := dyn_rect_vs_rect(rect, tank_rect, rel_vel, dt) or_continue
             delta_v := contact.normal * linalg.abs(rel_vel) * (1 - contact.time)
-            new_vel += delta_v / 2
-            tanks[hit.index].vel -= delta_v / 2
+            new_vel += delta_v
+            tanks[hit.index].vel -= delta_v
         }
-
     }
     return new_vel
 }
@@ -250,7 +248,7 @@ ray_vs_rect :: proc(origin, dir: rl.Vector2, rect: rl.Rectangle) -> (Contact, bo
 
     t_near := max(near.x, near.y)
     t_far  := min(far.x, far.y)
-    if t_far < 0 {
+    if t_far < 0 || t_near <= -linalg.F32_EPSILON {
         return {}, false // Ray pointing away from rect.
     }
 
