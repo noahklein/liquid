@@ -129,6 +129,13 @@ vec2 :: proc(v: ^rl.Vector2, min: f32 = -INF, max: f32 = INF, step: f32 = 0.1, l
     second.x += rect.width
     second_label: cstring = " " if label != nil else nil // empty label to pad height.
     float_rect(second, &v.y, min, max, step, second_label)
+
+    divider := second
+    if label != nil {
+        _, divider = label_split_rect(second, label)
+    }
+    div_padding := divider.height / 4
+    rl.DrawLineEx({divider.x, divider.y + div_padding}, {divider.x, divider.y + divider.height - div_padding}, 1, TEXT_COLOR)
 }
 
 float :: proc(f: ^f32, min := -INF, max := INF, step: f32 = 0.1, label: cstring = nil) {
