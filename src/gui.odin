@@ -52,20 +52,23 @@ gui_drag :: proc(cursor: rl.Vector2) {
 gui_draw :: proc() {
     cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
     if hover, ok := grid.hovered_cell(cursor); ok {
+        rl.BeginMode2D(camera)
+        defer rl.EndMode2D()
+
         // Delete walls on right click.
-        if rl.IsMouseButtonPressed(.RIGHT) do for wall, i in world.walls {
-            if rl.CheckCollisionPointRec(cursor, wall.rec) {
+        for wall, i in world.walls do if rl.CheckCollisionPointRec(cursor, wall.rec) {
+            rl.DrawRectangleRec(wall.rec, rl.WHITE - {0, 0, 0, 200})
+            if rl.IsMouseButtonPressed(.RIGHT) {
                 unordered_remove(&world.walls, i)
             }
+            break
         }
 
-        rl.BeginMode2D(camera)
-            gui_drag(cursor)
-            if !ngui.want_mouse() {
-                // rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
-                // grid.draw(camera)
-            }
-        rl.EndMode2D()
+        gui_drag(cursor)
+        if !ngui.want_mouse() {
+            // rl.DrawRectangleV(hover, grid.CELL_SIZE, rl.YELLOW - {0, 0, 0, 60})
+            // grid.draw(camera)
+        }
     }
 
     ngui.update()
@@ -87,7 +90,8 @@ gui_draw :: proc() {
         if ngui.flex_row({0.2, 0.3, 0.3, 0.2}) {
             ngui.text("Player")
             ngui.vec2(&player.pos, label = "Position")
-            ngui.vec2(&player.vel, label = "Velocity")
+            // ngui.vec2(&player.vel, label = "Velocity")
+            ngui.arrow(&player.vel, "Velocity")
             ngui.float(&player.fullness, min = 0, max = 1, step = 0.01, label = "Fullness")
         }
 

@@ -37,10 +37,10 @@ init :: proc() {
     reserve(&tanks, 1)
 
     for x in 0..<cap(walls) {
-        WIDTH :: 3 * grid.CELL_SIZE
+        WIDTH :: 4 * grid.CELL_SIZE
         append(&walls, Wall{
             rec = {f32(x) * WIDTH, 10 * grid.CELL_SIZE, WIDTH, grid.CELL_SIZE * 5},
-            color = rand_color(),
+            color = rand_color(low = {80, 80, 80, 255}, high = {200, 200, 200, 255}),
         })
     }
 }
@@ -284,11 +284,18 @@ dyn_rect_vs_rect :: proc(dyn, static: rl.Rectangle, vel: rl.Vector2, dt: f32) ->
     return contact, true
 }
 
-rand_color :: proc() -> rl.Color {
+rand_color :: proc(low := rl.BLACK, high := rl.WHITE) -> rl.Color {
+    rand_u8 :: proc(low, high: u8) -> u8 {
+        if low == high do return low
+
+        r := rand.int_max(int(high - low))
+        return u8(r) + low
+    }
+
     return {
-        u8(rand.int_max(256)),
-        u8(rand.int_max(256)),
-        u8(rand.int_max(256)),
-        255,
+        rand_u8(low.r, high.r),
+        rand_u8(low.g, high.g),
+        rand_u8(low.b, high.b),
+        rand_u8(low.a, high.a),
     }
 }
